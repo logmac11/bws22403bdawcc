@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Pathways | Big Data Analytics with Cloud Computing</title>
+    <style>
+        @media print {
+            body { font-size: 11pt; line-height: 1.4; }
+            .no-print { display: none; }
+            .page-break { page-break-before: always; }
+        }
+        :root {
+            --primary: #006847; --success: #4caf50; --warning: #ff9800; --info: #2196f3;
+            --bg: #ffffff; --text: #2c3e50; --border: #e0e6ed;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 2rem; max-width: 800px; margin: 0 auto; }
+        h1 { color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        h2 { color: var(--primary); margin: 1.5rem 0 0.75rem; }
+        .pathway { 
+            background: #f8fafc; 
+            border-left: 4px solid var(--primary); 
+            padding: 1rem; 
+            margin: 1rem 0; 
+            border-radius: 0 8px 8px 0; 
+        }
+        .pathway.core { border-left-color: var(--success); }
+        .pathway.advanced { border-left-color: var(--warning); }
+        .pathway.cloud { border-left-color: var(--info); }
+        .badge { 
+            display: inline-block; 
+            padding: 0.2rem 0.6rem; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: 700; 
+            margin-right: 0.5rem; 
+        }
+        .badge-core { background: var(--success); color: white; }
+        .badge-optional { background: var(--warning); color: #333; }
+        .badge-selfstudy { background: var(--info); color: white; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }
+        th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; }
+        .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.9rem; color: #666; }
+        .btn { 
+            display: inline-block; 
+            background: var(--primary); 
+            color: white; 
+            padding: 0.5rem 1rem; 
+            border-radius: 6px; 
+            text-decoration: none; 
+            font-weight: 600; 
+            margin: 0.5rem 0; 
+        }
+        @media screen {
+            .no-print { margin-bottom: 1rem; }
+            .btn:hover { opacity: 0.9; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; margin-bottom: 1rem;">
+        <button class="btn" onclick="window.print()">🖨️ Print This Guide</button>
+        <button class="btn" onclick="window.close()">✕ Close</button>
+    </div>
+
+    <h1>🗺️ Learning Pathways Guide</h1>
+    <p><strong>Big Data Analytics with Cloud Computing</strong> • BSc Data Analytics • UTHM</p>
+    
+    <p>Choose the path that matches your career goals. All paths start with the <span class="badge badge-core">CORE</span> labs.</p>
+
+    <div class="pathway core">
+        <h2>📊 Data Analyst Track <span class="badge badge-core">RECOMMENDED</span></h2>
+        <p><strong>Focus:</strong> Querying, transforming, and analyzing data at scale</p>
+        <p><strong>Complete these 6 labs:</strong></p>
+        <table>
+            <thead><tr><th>Lab</th><th>Topic</th><th>Key Skill</th></tr></thead>
+            <tbody>
+                <tr><td>0</td><td>Installation & Setup</td><td>Environment readiness</td></tr>
+                <tr><td>1</td><td>CRUD & Document Modeling</td><td>MongoDB querying</td></tr>
+                <tr><td>2</td><td>Aggregation & Indexing</td><td>Analytical pipelines</td></tr>
+                <tr><td>4</td><td>PySpark + MongoDB</td><td>Distributed processing</td></tr>
+                <tr><td>5</td><td>PySpark SQL & UDFs</td><td>SQL-on-Spark analytics</td></tr>
+                <tr><td>10</td><td>FinOps & Cost Optimization</td><td>Cloud cost awareness</td></tr>
+            </tbody>
+        </table>
+        <p><strong>✅ Job Roles:</strong> Data Analyst, BI Analyst, Analytics Engineer</p>
+        <p><strong>⏱️ Time:</strong> 8-10 weeks (2-3 hrs/week)</p>
+    </div>
+
+    <div class="pathway advanced">
+        <h2>⚙️ Data Engineer Track <span class="badge badge-optional">EXTENDED</span></h2>
+        <p><strong>Focus:</strong> Building and automating data pipelines</p>
+        <p><strong>Core Labs (above) + these 3 optional labs:</strong></p>
+        <table>
+            <thead><tr><th>Lab</th><th>Topic</th><th>Key Skill</th></tr></thead>
+            <tbody>
+                <tr><td>3</td><td>Advanced Aggregation</td><td>Relational analytics ($lookup, $facet)</td></tr>
+                <tr><td>6</td><td>Structured Streaming</td><td>Real-time data processing</td></tr>
+                <tr><td>8</td><td>CI/CD with GitHub Actions</td><td>Pipeline automation</td></tr>
+            </tbody>
+        </table>
+        <p><strong>✅ Job Roles:</strong> Data Engineer, ETL Developer, Analytics Platform Engineer</p>
+        <p><strong>⏱️ Time:</strong> +3-4 weeks beyond Core Track</p>
+    </div>
+
+    <div class="pathway cloud">
+        <h2>☁️ Cloud Engineer Track <span class="badge badge-selfstudy">ADVANCED</span></h2>
+        <p><strong>Focus:</strong> Full lifecycle: build → deploy → operate → optimize</p>
+        <p><strong>All 10 labs</strong> (Core + Optional + Self-Study):</p>
+        <table>
+            <thead><tr><th>Lab</th><th>Topic</th><th>Key Skill</th></tr></thead>
+            <tbody>
+                <tr><td>7</td><td>Terraform & IaC</td><td>Declarative infrastructure</td></tr>
+                <tr><td>9</td><td>Kubernetes</td><td>Container orchestration</td></tr>
+            </tbody>
+        </table>
+        <p><strong>✅ Job Roles:</strong> Cloud Data Engineer, DevOps Engineer, Platform Engineer</p>
+        <p><strong>⏱️ Time:</strong> +4-5 weeks beyond Extended Track</p>
+        <p><strong>📚 Delivery:</strong> Self-study with recorded walkthroughs + office hours</p>
+    </div>
+
+    <h2>💡 Pro Tips for Success</h2>
+    <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+        <li><strong>Start with Core:</strong> Master Labs 0, 1, 2 before moving to PySpark</li>
+        <li><strong>Use Colab:</strong> Labs 4-6 run in Google Colab — no local Spark install needed</li>
+        <li><strong>Binary grading:</strong> Focus on completing deliverables, not perfection</li>
+        <li><strong>Ask early:</strong> Stuck for >30 mins? Post in course forum or attend office hours</li>
+        <li><strong>Cloud credits:</strong> MongoDB Atlas M0 is free forever — no credit card needed</li>
+    </ul>
+
+    <div class="footer">
+        <p>📘 <strong>Big Data Analytics with Cloud Computing</strong> | Universiti Tun Hussein Onn Malaysia</p>
+        <p>All labs use 100% free tools. No payment or credit card required.</p>
+        <p style="margin-top: 0.5rem;">© 2026 UTHM • Print date: <script>document.write(new Date().toLocaleDateString())</script></p>
+    </div>
+</body>
+</html>
