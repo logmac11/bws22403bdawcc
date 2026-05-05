@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 6: Spark Structured Streaming | Big Data Analytics</title>
+    <style>
+        :root {
+            --primary: #006847; --primary-light: #00895c; --primary-dark: #004d35;
+            --accent: #ff9800; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --info: #2196f3;
+            --bg: #f5f7fa; --card: #ffffff; --text: #2c3e50; --text-light: #7f8c8d; --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f; --sidebar-hover: #2d4a3f; --code-bg: #2d3748; --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px; --transition: all 0.3s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; display: flex; min-height: 100vh; }
+        .sidebar { width: 320px; background: var(--sidebar-bg); color: white; position: fixed; left: 0; top: 0; height: 100vh; overflow-y: auto; padding: 2rem 1.5rem; box-shadow: var(--shadow-lg); z-index: 1000; }
+        .sidebar-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .sidebar-header h1 { font-size: 1.3rem; margin-bottom: 0.5rem; color: white; }
+        .sidebar-header .subtitle { font-size: 0.85rem; opacity: 0.9; color: #a0d4c7; }
+        .progress-section { background: rgba(255,255,255,0.1); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 2rem; }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .progress-header h3 { font-size: 0.95rem; color: white; }
+        .progress-percent { font-weight: 700; color: var(--accent); font-size: 1.3rem; }
+        .progress-bar { height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--accent)); border-radius: 5px; transition: width 0.5s ease; width: 0%; }
+        .progress-steps { font-size: 0.75rem; color: #a0d4c7; text-align: center; }
+        .nav-section { margin-bottom: 2rem; }
+        .nav-section h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; color: #a0d4c7; padding-left: 0.5rem; }
+        .nav-list { list-style: none; }
+        .nav-item { margin-bottom: 0.25rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: white; text-decoration: none; border-radius: 8px; transition: var(--transition); cursor: pointer; font-size: 0.9rem; }
+        .nav-link:hover, .nav-link.active { background: var(--sidebar-hover); color: white; }
+        .nav-link.active { background: var(--primary-light); font-weight: 600; }
+        .nav-icon { margin-right: 0.75rem; font-size: 1.1rem; }
+        .nav-status { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+        .nav-item.completed .nav-status { background: var(--success); }
+        .nav-item.in-progress .nav-status { background: var(--accent); }
+        .main-content { margin-left: 320px; flex: 1; padding: 2rem; max-width: calc(100% - 320px); }
+        .header { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%); color: white; padding: 2rem; border-radius: var(--radius); margin-bottom: 2rem; box-shadow: var(--shadow-lg); }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.85rem; margin-top: 0.5rem; backdrop-filter: blur(10px); }
+        .card { background: var(--card); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border-left: 4px solid var(--primary); transition: var(--transition); }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h3 { color: var(--text); font-size: 1.2rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        .step { background: #f8fafc; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; border: 1px solid var(--border); border-left: 4px solid var(--accent); }
+        .step-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; font-size: 0.85rem; font-weight: 700; margin-right: 0.5rem; }
+        .code-block { background: var(--code-bg); color: var(--code-text); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; position: relative; overflow-x: auto; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; }
+        .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.15); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: var(--transition); }
+        .copy-btn:hover { background: rgba(255,255,255,0.3); }
+        .copy-btn.copied { background: var(--success); }
+        .code-explanation { background: #fff9e6; border-left: 4px solid var(--accent); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+        .code-explanation strong { color: var(--primary-dark); display: block; margin-bottom: 0.5rem; }
+        .expected-output { background: #e8f5e9; border-left: 4px solid var(--success); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; }
+        .expected-output strong { color: #2e7d32; display: block; margin-bottom: 0.5rem; }
+        .checklist { list-style: none; }
+        .checklist li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; }
+        .checklist li:last-child { border-bottom: none; }
+        .checklist input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+        .checklist label { cursor: pointer; flex: 1; }
+        .alert { padding: 1rem 1.25rem; border-radius: 8px; margin: 1rem 0; display: flex; align-items: flex-start; gap: 0.75rem; }
+        .alert-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid var(--success); }
+        .alert-warning { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .alert-info { background: #e3f2fd; border-left: 4px solid var(--info); }
+        .alert-danger { background: #ffebee; border-left: 4px solid var(--danger); }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+        .deliverable-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .deliverable-item { background: white; border-radius: 8px; padding: 1rem; border: 1px solid var(--border); }
+        .deliverable-item .num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 50%; font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem; }
+        .accordion { margin: 1rem 0; }
+        .accordion-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
+        .accordion-header { background: #f8fafc; padding: 1rem 1.25rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; transition: var(--transition); user-select: none; }
+        .accordion-header:hover { background: #eef2f7; }
+        .accordion-header::after { content: '▼'; font-size: 0.75rem; transition: transform 0.3s ease; }
+        .accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+        .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 1.25rem; }
+        .accordion-item.open .accordion-body { max-height: 2000px; padding: 1rem 1.25rem; }
+        .tip-box { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .tip-box strong { color: #1565c0; display: block; margin-bottom: 0.5rem; }
+        .footer { text-align: center; padding: 2rem; color: var(--text-light); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+        @media (max-width: 1024px) { .sidebar { width: 100%; height: auto; position: relative; padding: 1rem; } .main-content { margin-left: 0; max-width: 100%; } body { flex-direction: column; } }
+        [id] { scroll-margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>📘 LAB 6</h1><p class="subtitle">Spark Structured Streaming</p></div>
+        <div class="progress-section">
+            <div class="progress-header"><h3>📊 Lab Progress</h3><span class="progress-percent" id="progressPercent">0%</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-steps"><span id="completedSteps">0</span> of <span id="totalSteps">7</span> sections completed</div>
+        </div>
+        <nav class="nav-section">
+            <h4>📋 Lab Steps</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="setup"><a href="#setup" class="nav-link"><span class="nav-icon"></span><span>Colab Setup</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="socket"><a href="#socket" class="nav-link"><span class="nav-icon">🔌</span><span>Simulate Stream</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="stream"><a href="#stream" class="nav-link"><span class="nav-icon">⚡</span><span>Read & Parse</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="window"><a href="#window" class="nav-link"><span class="nav-icon">📈</span><span>Windowed Aggs</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="watermark"><a href="#watermark" class="nav-link"><span class="nav-icon">💧</span><span>Watermarking</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="cloud"><a href="#cloud" class="nav-link"><span class="nav-icon">☁️</span><span>Cloud Bridge</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+        <nav class="nav-section">
+            <h4>📤 Submission</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="deliverables"><a href="#deliverables" class="nav-link"><span class="nav-icon">📦</span><span>Deliverables</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="troubleshoot"><a href="#troubleshoot" class="nav-link"><span class="nav-icon">🛠️</span><span>Troubleshoot</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>📘 LAB 6: Real-Time Data Streaming with Spark Structured Streaming</h1>
+            <p class="subtitle">Big Data Analytics with Cloud Computing</p>
+            <p class="subtitle">BSc Data Analytics • UTHM</p>
+            <span class="badge">🔒 100% Free • Continuous Queries, State Management & Event Time</span>
+        </div>
+        <div class="alert alert-info">
+            <span class="alert-icon">🎯</span>
+            <div><strong>Lab Focus:</strong> Treat real-time data as a continuous table. Build streaming queries for live dashboards, handle late-arriving data with watermarks, and understand micro-batch execution. Submit streaming console outputs.</div>
+        </div>
+
+        <section class="card" id="setup">
+            <h2>📦 Step 1: Environment Setup</h2>
+            <p>We will use a **TCP Socket** to simulate a live data feed. This requires running a producer script in one cell and the Spark consumer in another.</p>
+            <div class="code-block">
+<code>!pip install pyspark
+import subprocess
+import threading
+import random
+import time
+import json
+
+# Start a background socket server simulating CampusMart orders
+def producer():
+    import socket
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(('localhost', 9999))
+    server.listen(1)
+    print("📡 Producer listening on port 9999...")
+    conn, _ = server.accept()
+    categories = ["Textbooks", "Electronics", "Appliances"]
+    try:
+        while True:
+            record = {
+                "category": random.choice(categories),
+                "price": round(random.uniform(10, 200), 2),
+                "event_time": time.strftime("%Y-%m-%d %H:%M:%S")
+            }
+            conn.send((json.dumps(record) + "\n").encode())
+            time.sleep(1)
+    except:
+        pass
+    finally:
+        conn.close()
+
+threading.Thread(target=producer, daemon=True).start()
+print("✅ Producer thread started.")</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <ul class="checklist" data-section="setup">
+                <li><input type="checkbox" id="set-1" onchange="updateProgress()"><label for="set-1">Colab notebook created</label></li>
+                <li><input type="checkbox" id="set-2" onchange="updateProgress()"><label for="set-2">Background producer running</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="stream">
+            <h2>⚡ Step 2: Read & Parse Stream</h2>
+            <p>Spark Structured Streaming treats the socket as an unbounded table.</p>
+            <div class="code-block">
+<code>from pyspark.sql import SparkSession
+from pyspark.sql.functions import from_json, col
+from pyspark.sql.types import StructType, StringType, DoubleType
+
+spark = SparkSession.builder.appName("Lab6-Streaming").getOrCreate()
+
+# Define schema matching JSON records
+schema = StructType() \
+    .add("category", StringType()) \
+    .add("price", DoubleType()) \
+    .add("event_time", StringType())
+
+# Read stream
+raw_stream = spark.readStream \
+    .format("socket") \
+    .option("host", "localhost") \
+    .option("port", 9999) \
+    .load()
+
+# Parse JSON
+parsed_stream = raw_stream.select(from_json(col("value"), schema).alias("data")).select("data.*")
+
+# Query 1: Console output
+query = parsed_stream.writeStream \
+    .outputMode("append") \
+    .format("console") \
+    .start()
+
+# Let it run for 10 seconds then stop
+time.sleep(10)
+query.stop()</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 Key Concepts:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>readStream</code> vs <code>read</code>: Defines a streaming DataFrame</li>
+                    <li><code>outputMode("append")</code>: Only new rows are written</li>
+                    <li><code>writeStream.start()</code>: Triggers continuous execution</li>
+                    <li>Spark processes data in <strong>micro-batches</strong> (default 500ms)</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="stream">
+                <li><input type="checkbox" id="str-1" onchange="updateProgress()"><label for="str-1">Streaming connection established</label></li>
+                <li><input type="checkbox" id="str-2" onchange="updateProgress()"><label for="str-2">JSON parsed & schema applied</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="window">
+            <h2>📈 Step 3: Windowed Aggregations</h2>
+            <p>Analyze metrics over sliding time windows (e.g., "Revenue per 5-minute window").</p>
+            <div class="code-block">
+<code>from pyspark.sql.functions import window, sum as spark_sum
+
+# Windowed query
+windowed_agg = parsed_stream \
+    .groupBy(window(col("event_time"), "5 minutes")) \
+    .agg(spark_sum("price").alias("total_revenue"))
+
+query2 = windowed_agg.writeStream \
+    .outputMode("complete") \
+    .format("console") \
+    .option("truncate", "false") \
+    .start()
+
+time.sleep(15)
+query2.stop()</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="expected-output">
+                <strong>✅ Expected Console Output:</strong>
+                <div class="code-block" style="margin-top: 0.5rem; background: #c8e6c9;">
+<code>-------------------------------------------
+| window                  | total_revenue |
+-------------------------------------------
+| [2026-04-16 10:00, ...)| 450.50        |
+| [2026-04-16 10:05, ...)| 120.00        |
+-------------------------------------------</code>
+                </div>
+            </div>
+            <ul class="checklist" data-section="window">
+                <li><input type="checkbox" id="win-1" onchange="updateProgress()"><label for="win-1">Windowed aggregation defined</label></li>
+                <li><input type="checkbox" id="win-2" onchange="updateProgress()"><label for="win-2">Complete output mode verified</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="watermark">
+            <h2>💧 Step 4: Watermarking (Handling Late Data)</h2>
+            <p>In real systems, data arrives late. Watermarks tell Spark when to drop old state and stop waiting for late records.</p>
+            <div class="code-block">
+<code># Cast to Timestamp & Apply Watermark
+timestamped_stream = parsed_stream.withColumn("ts", col("event_time").cast("timestamp"))
+
+watermarked_query = timestamped_stream \
+    .withWatermark("ts", "10 minutes") \
+    .groupBy(window(col("ts"), "5 minutes"), "category") \
+    .agg(spark_sum("price").alias("revenue"))
+
+query3 = watermarked_query.writeStream \
+    .outputMode("complete") \
+    .format("console") \
+    .start()
+
+time.sleep(20)
+query3.stop()</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 Watermark Logic:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>withWatermark("ts", "10 min")</code>: Drop state older than 10 min relative to max event time</li>
+                    <li>Prevents memory leaks in infinite streams</li>
+                    <li>Essential for production reliability</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="watermark">
+                <li><input type="checkbox" id="wm-1" onchange="updateProgress()"><label for="wm-1">Watermark applied successfully</label></li>
+                <li><input type="checkbox" id="wm-2" onchange="updateProgress()"><label for="wm-2">State management understood</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="cloud">
+            <h2>☁️ Step 6: Cloud Computing Bridge</h2>
+            <table>
+                <thead><tr><th>Local Spark Command</th><th>Managed Cloud Equivalent</th><th>Cloud Concept</th></tr></thead>
+                <tbody>
+                    <tr><td><code>readStream.format("socket")</code></td><td>Kafka on Confluent Cloud / AWS MSK / GCP PubSub</td><td>Managed message brokers</td></tr>
+                    <tr><td>Micro-batch execution</td><td>Structured Streaming on Databricks / Dataflow</td><td>Serverless continuous processing</td></tr>
+                    <tr><td>Manual Watermarking</td><td>Cloud Auto-scaling + Managed State Stores (RocksDB)</td><td>Elastic state management</td></tr>
+                    <tr><td>Console Sink</td><td>BigQuery / Snowflake / Delta Lake Sink</td><td>Streaming Data Warehouses</td></tr>
+                </tbody>
+            </table>
+            <div class="alert alert-info">
+                <span class="alert-icon">🔑</span>
+                <div><strong>Key Takeaway:</strong> In the cloud, you rarely manage Kafka clusters or Spark checkpoints manually. You use managed services that handle scaling, state durability, and exactly-once semantics automatically.</div>
+            </div>
+            <ul class="checklist" data-section="cloud">
+                <li><input type="checkbox" id="cl-1" onchange="updateProgress()"><label for="cl-1">Mapped local streaming to managed brokers</label></li>
+                <li><input type="checkbox" id="cl-2" onchange="updateProgress()"><label for="cl-2">Understood managed state stores</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="deliverables">
+            <h2>📤 Submission: Lab 6 Deliverables</h2>
+            <div class="deliverable-grid">
+                <div class="deliverable-item"><span class="num">1</span><strong>Stream Connection</strong><br><small>Screenshot of producer start & Spark read</small></div>
+                <div class="deliverable-item"><span class="num">2</span><strong>Parsed Output</strong><br><small>Console output showing parsed JSON columns</small></div>
+                <div class="deliverable-item"><span class="num">3</span><strong>Windowed Aggs</strong><br><small>5-minute window revenue table</small></div>
+                <div class="deliverable-item"><span class="num">4</span><strong>Watermark Code</strong><br><small>Screenshot of watermark syntax</small></div>
+                <div class="deliverable-item"><span class="num">5</span><strong>Cloud Reflection</strong><br><small>1-sentence: "Why is watermarking harder in a distributed cloud environment?"</small></div>
+            </div>
+            <div class="alert alert-success">
+                <span class="alert-icon">📁</span>
+                <div><strong>Format:</strong> PDF export from Colab<br><strong>Name:</strong> <code>LAB6_AD200001</code><br><strong>Grading:</strong> ✅ Complete / ❌ Incomplete (>3 deliverables = full credit)</div>
+            </div>
+            <ul class="checklist" data-section="deliverables">
+                <li><input type="checkbox" id="del-1" onchange="updateProgress()"><label for="del-1">All 5 deliverables prepared</label></li>
+                <li><input type="checkbox" id="del-2" onchange="updateProgress()"><label for="del-2">Named correctly & ready to submit</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="troubleshoot">
+            <h2>🛠️ Troubleshooting & Tips</h2>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Connection refused" to socket</div>
+                    <div class="accordion-body"><p>Ensure the producer thread is running <strong>before</strong> starting the Spark query. In Colab, run the producer cell first, wait for "Listening...", then run Spark cell.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Watermarking not supported in append mode with joins"</div>
+                    <div class="accordion-body"><p>Watermarks in Append mode only work with simple aggregations. For joins or complex state, use <code>outputMode("update")</code> or <code>"complete"</code>.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">💡 How to stop a stuck query?</div>
+                    <div class="accordion-body"><p>In Colab, click the <strong>Stop button</strong> (square icon) in the cell toolbar. In local Spark, use <code>query.stop()</code> or kill the driver process.</p></div>
+                </div>
+            </div>
+            <ul class="checklist" data-section="troubleshoot">
+                <li><input type="checkbox" id="ts-1" onchange="updateProgress()"><label for="ts-1">Reviewed troubleshooting section</label></li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>📘 <strong>LAB 6: Spark Structured Streaming</strong></p>
+            <p>Big Data Analytics with Cloud Computing | BSc Data Analytics | UTHM</p>
+            <p style="margin-top: 0.5rem;">All tools are 100% free. Patterns scale directly to Confluent Cloud, Databricks, & managed stream processors.</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </main>
+
+    <script>
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = '✅ Copied!'; btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+            });
+        }
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+        function updateProgress() {
+            const all = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percent = Math.round((checked.length / all.length) * 100);
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            const sections = document.querySelectorAll('.checklist');
+            let completed = 0;
+            sections.forEach(s => {
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (cb.length > 0 && cb.length === ck.length) completed++;
+            });
+            document.getElementById('completedSteps').textContent = completed;
+            document.getElementById('totalSteps').textContent = sections.length;
+            sections.forEach(s => {
+                const name = s.getAttribute('data-section');
+                const nav = document.querySelector(`.nav-item[data-section="${name}"]`);
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (nav) {
+                    nav.classList.remove('completed', 'in-progress');
+                    if (cb.length > 0 && cb.length === ck.length) nav.classList.add('completed');
+                    else if (ck.length > 0) nav.classList.add('in-progress');
+                }
+            });
+            all.forEach(c => localStorage.setItem(c.id, c.checked));
+        }
+        function loadProgress() {
+            document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+                if (localStorage.getItem(c.id) === 'true') { c.checked = true; c.parentElement.classList.add('completed'); }
+            });
+            updateProgress();
+        }
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+            c.addEventListener('change', function() { this.parentElement.classList.toggle('completed', this.checked); });
+        });
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        window.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('section[id]').forEach(sec => {
+                if (scrollY >= (sec.offsetTop - 100)) current = sec.getAttribute('id');
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+            });
+        });
+        window.addEventListener('load', loadProgress);
+    </script>
+</body>
+</html>

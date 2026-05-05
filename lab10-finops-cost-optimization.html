@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 10: FinOps & Cloud Cost Optimization | Big Data Analytics</title>
+    <style>
+        :root {
+            --primary: #006847; --primary-light: #00895c; --primary-dark: #004d35;
+            --accent: #ff9800; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --info: #2196f3;
+            --bg: #f5f7fa; --card: #ffffff; --text: #2c3e50; --text-light: #7f8c8d; --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f; --sidebar-hover: #2d4a3f; --code-bg: #2d3748; --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px; --transition: all 0.3s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; display: flex; min-height: 100vh; }
+        .sidebar { width: 320px; background: var(--sidebar-bg); color: white; position: fixed; left: 0; top: 0; height: 100vh; overflow-y: auto; padding: 2rem 1.5rem; box-shadow: var(--shadow-lg); z-index: 1000; }
+        .sidebar-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .sidebar-header h1 { font-size: 1.3rem; margin-bottom: 0.5rem; color: white; }
+        .sidebar-header .subtitle { font-size: 0.85rem; opacity: 0.9; color: #a0d4c7; }
+        .progress-section { background: rgba(255,255,255,0.1); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 2rem; }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .progress-header h3 { font-size: 0.95rem; color: white; }
+        .progress-percent { font-weight: 700; color: var(--accent); font-size: 1.3rem; }
+        .progress-bar { height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--accent)); border-radius: 5px; transition: width 0.5s ease; width: 0%; }
+        .progress-steps { font-size: 0.75rem; color: #a0d4c7; text-align: center; }
+        .nav-section { margin-bottom: 2rem; }
+        .nav-section h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; color: #a0d4c7; padding-left: 0.5rem; }
+        .nav-list { list-style: none; }
+        .nav-item { margin-bottom: 0.25rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: white; text-decoration: none; border-radius: 8px; transition: var(--transition); cursor: pointer; font-size: 0.9rem; }
+        .nav-link:hover, .nav-link.active { background: var(--sidebar-hover); color: white; }
+        .nav-link.active { background: var(--primary-light); font-weight: 600; }
+        .nav-icon { margin-right: 0.75rem; font-size: 1.1rem; }
+        .nav-status { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+        .nav-item.completed .nav-status { background: var(--success); }
+        .nav-item.in-progress .nav-status { background: var(--accent); }
+        .main-content { margin-left: 320px; flex: 1; padding: 2rem; max-width: calc(100% - 320px); }
+        .header { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%); color: white; padding: 2rem; border-radius: var(--radius); margin-bottom: 2rem; box-shadow: var(--shadow-lg); }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.85rem; margin-top: 0.5rem; backdrop-filter: blur(10px); }
+        .card { background: var(--card); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border-left: 4px solid var(--primary); transition: var(--transition); }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h3 { color: var(--text); font-size: 1.2rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        .step { background: #f8fafc; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; border: 1px solid var(--border); border-left: 4px solid var(--accent); }
+        .step-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; font-size: 0.85rem; font-weight: 700; margin-right: 0.5rem; }
+        .code-block { background: var(--code-bg); color: var(--code-text); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; position: relative; overflow-x: auto; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; }
+        .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.15); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: var(--transition); }
+        .copy-btn:hover { background: rgba(255,255,255,0.3); }
+        .copy-btn.copied { background: var(--success); }
+        .code-explanation { background: #fff9e6; border-left: 4px solid var(--accent); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+        .code-explanation strong { color: var(--primary-dark); display: block; margin-bottom: 0.5rem; }
+        .expected-output { background: #e8f5e9; border-left: 4px solid var(--success); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; }
+        .expected-output strong { color: #2e7d32; display: block; margin-bottom: 0.5rem; }
+        .checklist { list-style: none; }
+        .checklist li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; }
+        .checklist li:last-child { border-bottom: none; }
+        .checklist input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+        .checklist label { cursor: pointer; flex: 1; }
+        .alert { padding: 1rem 1.25rem; border-radius: 8px; margin: 1rem 0; display: flex; align-items: flex-start; gap: 0.75rem; }
+        .alert-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid var(--success); }
+        .alert-warning { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .alert-info { background: #e3f2fd; border-left: 4px solid var(--info); }
+        .alert-danger { background: #ffebee; border-left: 4px solid var(--danger); }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+        .deliverable-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .deliverable-item { background: white; border-radius: 8px; padding: 1rem; border: 1px solid var(--border); }
+        .deliverable-item .num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 50%; font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem; }
+        .accordion { margin: 1rem 0; }
+        .accordion-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
+        .accordion-header { background: #f8fafc; padding: 1rem 1.25rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; transition: var(--transition); user-select: none; }
+        .accordion-header:hover { background: #eef2f7; }
+        .accordion-header::after { content: '▼'; font-size: 0.75rem; transition: transform 0.3s ease; }
+        .accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+        .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 1.25rem; }
+        .accordion-item.open .accordion-body { max-height: 2000px; padding: 1rem 1.25rem; }
+        .tip-box { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .tip-box strong { color: #1565c0; display: block; margin-bottom: 0.5rem; }
+        .footer { text-align: center; padding: 2rem; color: var(--text-light); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+        @media (max-width: 1024px) { .sidebar { width: 100%; height: auto; position: relative; padding: 1rem; } .main-content { margin-left: 0; max-width: 100%; } body { flex-direction: column; } }
+        [id] { scroll-margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>📘 LAB 10</h1><p class="subtitle">FinOps & Cost Optimization</p></div>
+        <div class="progress-section">
+            <div class="progress-header"><h3>📊 Lab Progress</h3><span class="progress-percent" id="progressPercent">0%</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-steps"><span id="completedSteps">0</span> of <span id="totalSteps">7</span> sections completed</div>
+        </div>
+        <nav class="nav-section">
+            <h4>📋 Lab Steps</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="model"><a href="#model" class="nav-link"><span class="nav-icon"></span><span>Pricing Models</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="rightsizing"><a href="#rightsizing" class="nav-link"><span class="nav-icon">⚖️</span><span>Right-Sizing</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="spot"><a href="#spot" class="nav-link"><span class="nav-icon">💰</span><span>Spot Instances</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="storage"><a href="#storage" class="nav-link"><span class="nav-icon"></span><span>Storage Tiers</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="monitor"><a href="#monitor" class="nav-link"><span class="nav-icon">📊</span><span>Monitoring & Alerts</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="cloud"><a href="#cloud" class="nav-link"><span class="nav-icon">☁️</span><span>Cloud Bridge</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+        <nav class="nav-section">
+            <h4>📤 Submission</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="deliverables"><a href="#deliverables" class="nav-link"><span class="nav-icon">📦</span><span>Deliverables</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="troubleshoot"><a href="#troubleshoot" class="nav-link"><span class="nav-icon">🛠️</span><span>Troubleshoot</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>📘 LAB 10: Cloud Cost Optimization & FinOps for Data Platforms</h1>
+            <p class="subtitle">Big Data Analytics with Cloud Computing</p>
+            <p class="subtitle">BSc Data Analytics • UTHM</p>
+            <span class="badge">🔒 100% Free • FinOps Principles, Cost Allocation & Optimization Strategies</span>
+        </div>
+        <div class="alert alert-info">
+            <span class="alert-icon">🎯</span>
+            <div><strong>Lab Focus:</strong> Master cloud cost management for data workloads. Learn pricing models, right-sizing, spot instances, storage lifecycle policies, and FinOps governance. Submit cost analysis reports and optimization recommendations.</div>
+        </div>
+
+        <section class="card" id="model">
+            <h2>💰 Step 1: Understanding Cloud Pricing Models</h2>
+            <p>Cloud costs have three primary components. Understanding these is essential for optimization.</p>
+            <table>
+                <thead><tr><th>Cost Component</th><th>What It Covers</th><th>Optimization Levers</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Compute</strong></td><td>VMs, containers, serverless functions</td><td>Instance type selection, auto-scaling, spot/preemptible, reserved instances</td></tr>
+                    <tr><td><strong>Storage</strong></td><td>Block, object, database storage</td><td>Tiering (hot/cold/archive), compression, lifecycle policies, deletion</td></tr>
+                    <tr><td><strong>Network</strong></td><td>Data transfer, load balancers, CDN</td><td>Region selection, VPC peering, caching, minimizing egress</td></tr>
+                </tbody>
+            </table>
+            <div class="code-block">
+<code># Simulate cost estimation for CampusMart workload
+# Using AWS Pricing Calculator logic (conceptual)
+
+cat > cost_estimate.py << 'EOF'
+# CampusMart Monthly Cost Estimate (USD)
+compute_hours = 720  # 24/7 for 30 days
+instance_type = "t3.medium"  # ~$0.0416/hour on-demand
+storage_gb = 100  # gp3 SSD ~$0.08/GB-month
+data_transfer_gb = 50  # ~$0.09/GB egress
+
+compute_cost = compute_hours * 0.0416
+storage_cost = storage_gb * 0.08
+network_cost = data_transfer_gb * 0.09
+
+total = compute_cost + storage_cost + network_cost
+print(f"💰 Estimated Monthly Cost: ${total:.2f}")
+print(f"   • Compute: ${compute_cost:.2f}")
+print(f"   • Storage: ${storage_cost:.2f}")
+print(f"   • Network: ${network_cost:.2f}")
+EOF
+
+python cost_estimate.py</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="expected-output">
+                <strong>✅ Expected Output:</strong>
+                <div class="code-block" style="margin-top: 0.5rem; background: #c8e6c9;">
+<code>💰 Estimated Monthly Cost: $42.42
+   • Compute: $29.95
+   • Storage: $8.00
+   • Network: $4.50</code>
+                </div>
+            </div>
+            <ul class="checklist" data-section="model">
+                <li><input type="checkbox" id="mod-1" onchange="updateProgress()"><label for="mod-1">Understood compute/storage/network cost drivers</label></li>
+                <li><input type="checkbox" id="mod-2" onchange="updateProgress()"><label for="mod-2">Ran cost estimation script</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="rightsizing">
+            <h2>⚖️ Step 2: Right-Sizing Resources</h2>
+            <p>Over-provisioning wastes money; under-provisioning causes failures. Right-sizing matches resources to actual workload needs.</p>
+            <div class="code-block">
+<code># Analyze resource utilization (simulated)
+cat > rightsizing_analysis.py << 'EOF'
+import random
+
+# Simulate 7 days of CPU/memory metrics for a data processor
+days = 7
+metrics = []
+for day in range(days):
+    cpu_avg = random.uniform(15, 35)  # Actual usage %
+    mem_avg = random.uniform(40, 60)
+    metrics.append({"day": day+1, "cpu": cpu_avg, "mem": mem_avg})
+
+print("📊 Resource Utilization (Last 7 Days):")
+print(f"{'Day':<4} {'CPU Avg%':<10} {'Memory Avg%':<12} {'Recommendation'}")
+print("-" * 50)
+for m in metrics:
+    rec = "✅ Current size OK" if m["cpu"] > 20 and m["mem"] > 30 else "⬇️ Consider downsizing"
+    print(f"{m['day']:<4} {m['cpu']:<10.1f} {m['mem']:<12.1f} {rec}")
+
+# Calculate potential savings
+current_instance = "m5.large"  # ~$0.096/hour
+downsized_instance = "t3.medium"  # ~$0.0416/hour
+monthly_savings = (0.096 - 0.0416) * 720  # 720 hours/month
+print(f"\n💡 Potential Monthly Savings: ${monthly_savings:.2f} by right-sizing")
+EOF
+
+python rightsizing_analysis.py</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 Right-Sizing Best Practices:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li>Monitor metrics for 7-14 days before resizing</li>
+                    <li>Target 40-70% average CPU/memory utilization</li>
+                    <li>Use auto-scaling for variable workloads</li>
+                    <li>Test downsized instances in staging first</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="rightsizing">
+                <li><input type="checkbox" id="rs-1" onchange="updateProgress()"><label for="rs-1">Ran utilization analysis script</label></li>
+                <li><input type="checkbox" id="rs-2" onchange="updateProgress()"><label for="rs-2">Calculated potential savings from right-sizing</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="spot">
+            <h2>💰 Step 3: Spot/Preemptible Instances for Batch Workloads</h2>
+            <p>Spot instances offer up to 90% discount but can be interrupted. Ideal for fault-tolerant batch jobs (ETL, model training, data imports).</p>
+            <div class="code-block">
+<code># Compare on-demand vs spot pricing (simulated AWS)
+cat > spot_analysis.py << 'EOF'
+workloads = [
+    {"name": "Daily ETL", "duration_hrs": 2, "fault_tolerance": "high"},
+    {"name": "Model Training", "duration_hrs": 8, "fault_tolerance": "medium"},
+    {"name": "Real-time API", "duration_hrs": 24, "fault_tolerance": "low"}
+]
+
+on_demand_rate = 0.096  # m5.large per hour
+spot_rate = 0.025       # ~74% discount
+
+print("🎯 Spot Instance Suitability Analysis:")
+print(f"{'Workload':<20} {'Fault Tolerance':<18} {'Recommendation':<25} {'Savings/Month'}")
+print("-" * 80)
+for w in workloads:
+    if w["fault_tolerance"] == "high":
+        rec = "✅ Use Spot + checkpointing"
+        savings = (on_demand_rate - spot_rate) * w["duration_hrs"] * 30
+    elif w["fault_tolerance"] == "medium":
+        rec = "⚠️ Spot with fallback to on-demand"
+        savings = (on_demand_rate - spot_rate) * w["duration_hrs"] * 30 * 0.7
+    else:
+        rec = "❌ Use on-demand or reserved"
+        savings = 0
+    print(f"{w['name']:<20} {w['fault_tolerance']:<18} {rec:<25} ${savings:.2f}")
+EOF
+
+python spot_analysis.py</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="alert alert-warning">
+                <span class="alert-icon">⚠️</span>
+                <div><strong>Spot Strategy:</strong> Always design spot workloads with checkpointing, idempotency, and fallback logic. Use <code>spotInstanceInterruptionNotice</code> in AWS or <code>preemptible</code> signals in GCP to gracefully handle termination.</div>
+            </div>
+            <ul class="checklist" data-section="spot">
+                <li><input type="checkbox" id="spot-1" onchange="updateProgress()"><label for="spot-1">Analyzed spot suitability for 3 workloads</label></li>
+                <li><input type="checkbox" id="spot-2" onchange="updateProgress()"><label for="spot-2">Understood fault tolerance requirements for spot</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="storage">
+            <h2>🗄️ Step 4: Storage Tiering & Lifecycle Policies</h2>
+            <p>Not all data needs to be on expensive hot storage. Use lifecycle policies to automatically move data to cheaper tiers.</p>
+            <div class="code-block">
+<code># Simulate storage cost optimization with tiering
+cat > storage_lifecycle.py << 'EOF'
+# CampusMart data lifecycle (GB)
+data_profile = {
+    "hot_30d": 50,    # Accessed daily (S3 Standard: $0.023/GB)
+    "warm_90d": 100,  # Accessed weekly (S3 IA: $0.0125/GB)
+    "cold_365d": 200, # Accessed monthly (S3 Glacier: $0.004/GB)
+    "archive": 500    # Rarely accessed (S3 Deep Archive: $0.00099/GB)
+}
+
+pricing = {
+    "standard": 0.023,
+    "infrequent": 0.0125,
+    "glacier": 0.004,
+    "deep_archive": 0.00099
+}
+
+# Cost if all on Standard (worst case)
+all_standard = sum(data_profile.values()) * pricing["standard"]
+
+# Cost with tiering (optimized)
+tiered_cost = (
+    data_profile["hot_30d"] * pricing["standard"] +
+    data_profile["warm_90d"] * pricing["infrequent"] +
+    data_profile["cold_365d"] * pricing["glacier"] +
+    data_profile["archive"] * pricing["deep_archive"]
+)
+
+savings = all_standard - tiered_cost
+print(f"💾 Storage Cost Optimization:")
+print(f"   • All on Standard: ${all_standard:.2f}/month")
+print(f"   • With Tiering:    ${tiered_cost:.2f}/month")
+print(f"   • 💰 Monthly Savings: ${savings:.2f} ({savings/all_standard*100:.1f}% reduction)")
+EOF
+
+python storage_lifecycle.py</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="tip-box">
+                <strong>💡 Lifecycle Policy Example (AWS S3):</strong>
+                <div class="code-block" style="margin-top: 0.5rem;">
+<code>{
+  "Rules": [{
+    "ID": "CampusMartDataLifecycle",
+    "Status": "Enabled",
+    "Transitions": [
+      {"Days": 30, "StorageClass": "STANDARD_IA"},
+      {"Days": 90, "StorageClass": "GLACIER"},
+      {"Days": 365, "StorageClass": "DEEP_ARCHIVE"}
+    ],
+    "Expiration": {"Days": 2555}  // Delete after 7 years
+  }]
+}</code>
+                </div>
+            </div>
+            <ul class="checklist" data-section="storage">
+                <li><input type="checkbox" id="stor-1" onchange="updateProgress()"><label for="stor-1">Calculated tiered storage savings</label></li>
+                <li><input type="checkbox" id="stor-2" onchange="updateProgress()"><label for="stor-2">Understood lifecycle policy structure</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="monitor">
+            <h2>📊 Step 5: Monitoring, Alerts & Cost Allocation</h2>
+            <p>Visibility is the first step to optimization. Tag resources and set budgets/alerts to prevent surprises.</p>
+            <div class="code-block">
+<code># Simulate cost monitoring & alerting logic
+cat > cost_monitor.py << 'EOF'
+import json
+
+# Simulated daily spend (USD)
+daily_spend = [1.20, 1.45, 1.30, 2.10, 1.85, 1.95, 3.50]  # Last 7 days
+budget_daily = 2.00
+alert_threshold = 0.9  # Alert at 90% of budget
+
+print("🔔 Cost Monitoring Dashboard:")
+print(f"{'Day':<4} {'Spend':<8} {'Budget':<8} {'Status':<15} {'Action'}")
+print("-" * 60)
+for i, spend in enumerate(daily_spend, 1):
+    pct = spend / budget_daily
+    if pct >= 1.0:
+        status = "🔴 OVER BUDGET"
+        action = "🚨 Investigate & optimize"
+    elif pct >= alert_threshold:
+        status = "🟡 NEARING LIMIT"
+        action = "⚠️ Review upcoming jobs"
+    else:
+        status = "🟢 ON TRACK"
+        action = "✅ Continue monitoring"
+    print(f"{i:<4} ${spend:<7.2f} ${budget_daily:<7.2f} {status:<15} {action}")
+
+# Tagging for chargeback
+tags = {
+    "Project": "CampusMart",
+    "Environment": "Production",
+    "Team": "Data-Analytics",
+    "CostCenter": "UTHM-CS-2026"
+}
+print(f"\n🏷️  Resource Tags for Cost Allocation:")
+for k, v in tags.items():
+    print(f"   {k}: {v}")
+EOF
+
+python cost_monitor.py</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 FinOps Core Practices:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><strong>Inform:</strong> Tag resources, allocate costs to teams/projects</li>
+                    <li><strong>Optimize:</strong> Right-size, use spot, delete unused resources</li>
+                    <li><strong>Operate:</strong> Set budgets, alerts, and governance policies</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="monitor">
+                <li><input type="checkbox" id="mon-1" onchange="updateProgress()"><label for="mon-1">Ran cost monitoring simulation</label></li>
+                <li><input type="checkbox" id="mon-2" onchange="updateProgress()"><label for="mon-2">Understood tagging for chargeback</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="cloud">
+            <h2>☁️ Step 6: Cloud Computing Bridge</h2>
+            <table>
+                <thead><tr><th>Local Simulation</th><th>Managed Cloud Equivalent</th><th>Cloud Concept</th></tr></thead>
+                <tbody>
+                    <tr><td>Python cost scripts</td><td>AWS Cost Explorer / GCP Billing Reports / Azure Cost Management</td><td>Native cost analytics dashboards</td></tr>
+                    <tr><td>Manual right-sizing</td><td>AWS Compute Optimizer / GCP Recommender / Azure Advisor</td><td>AI-driven optimization recommendations</td></tr>
+                    <tr><td>Spot analysis logic</td><td>AWS Spot Fleet / GCP Preemptible VMs / Azure Spot VMs</td><td>Managed spot orchestration with fallback</td></tr>
+                    <tr><td>Lifecycle policy JSON</td><td>S3 Lifecycle / GCS Object Lifecycle / Azure Blob Tiering</td><td>Declarative storage automation</td></tr>
+                    <tr><td>Tagging for chargeback</td><td>AWS Cost Allocation Tags / GCP Labels / Azure Tags + Policy</td><td>Governed cost attribution & showback</td></tr>
+                </tbody>
+            </table>
+            <div class="alert alert-info">
+                <span class="alert-icon">🔑</span>
+                <div><strong>Key Takeaway:</strong> FinOps is a cultural practice, not just tools. In cloud data platforms, engineers, finance, and business teams collaborate to maximize cloud value. Automation (IaC, policies, alerts) enables scale, but human judgment drives strategic decisions.</div>
+            </div>
+            <ul class="checklist" data-section="cloud">
+                <li><input type="checkbox" id="cl-1" onchange="updateProgress()"><label for="cl-1">Mapped local cost tools to cloud services</label></li>
+                <li><input type="checkbox" id="cl-2" onchange="updateProgress()"><label for="cl-2">Understood FinOps cultural principles</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="deliverables">
+            <h2>📤 Submission: Lab 10 Deliverables</h2>
+            <div class="deliverable-grid">
+                <div class="deliverable-item"><span class="num">1</span><strong>Cost Estimate Output</strong><br><small>Screenshot of cost_estimate.py results</small></div>
+                <div class="deliverable-item"><span class="num">2</span><strong>Right-Sizing Analysis</strong><br><small>Utilization table + savings calculation</small></div>
+                <div class="deliverable-item"><span class="num">3</span><strong>Spot Recommendation</strong><br><small>Table showing which workloads suit spot instances</small></div>
+                <div class="deliverable-item"><span class="num">4</span><strong>Storage Tiering Plan</strong><br><small>Lifecycle policy JSON + savings %</small></div>
+                <div class="deliverable-item"><span class="num">5</span><strong>FinOps Reflection</strong><br><small>1-paragraph: "How would you implement FinOps in a student project team?"</small></div>
+            </div>
+            <div class="alert alert-success">
+                <span class="alert-icon">📁</span>
+                <div><strong>Format:</strong> PDF export from terminal/notes<br><strong>Name:</strong> <code>LAB10_AD200001</code><br><strong>Grading:</strong> ✅ Complete / ❌ Incomplete (>3 deliverables = full credit)</div>
+            </div>
+            <ul class="checklist" data-section="deliverables">
+                <li><input type="checkbox" id="del-1" onchange="updateProgress()"><label for="del-1">All 5 deliverables prepared</label></li>
+                <li><input type="checkbox" id="del-2" onchange="updateProgress()"><label for="del-2">Named correctly & ready to submit</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="troubleshoot">
+            <h2>🛠️ Troubleshooting & Tips</h2>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Cost estimates seem too high/low"</div>
+                    <div class="accordion-body"><p>Cloud pricing is complex. Use official calculators: <a href="https://calculator.aws" target="_blank">AWS</a>, <a href="https://cloud.google.com/products/calculator" target="_blank">GCP</a>, <a href="https://azure.microsoft.com/pricing/calculator" target="_blank">Azure</a>. Always add 10-20% buffer for unexpected usage.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Spot instances keep getting interrupted"</div>
+                    <div class="accordion-body"><p>Check spot price history for your instance type/region. Use diversified instance types in Spot Fleets. Implement checkpointing every 15-30 minutes for long jobs.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Lifecycle policies not moving data"</div>
+                    <div class="accordion-body"><p>Policies apply to new objects only by default. Use S3 Batch Operations or GCS Transfer Service to retroactively tier existing data. Verify object creation dates match policy conditions.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">💡 How to practice FinOps without spending real money?</div>
+                    <div class="accordion-body"><p>Use free tiers + billing alerts set to $0.01. Simulate workloads with local tools (minikube, localstack). Focus on architecture decisions (spot vs on-demand, tiering strategy) rather than actual spend.</p></div>
+                </div>
+            </div>
+            <ul class="checklist" data-section="troubleshoot">
+                <li><input type="checkbox" id="ts-1" onchange="updateProgress()"><label for="ts-1">Reviewed troubleshooting section</label></li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>📘 <strong>LAB 10: Cloud Cost Optimization & FinOps for Data Platforms</strong></p>
+            <p>Big Data Analytics with Cloud Computing | BSc Data Analytics | UTHM</p>
+            <p style="margin-top: 0.5rem;">All tools are 100% free. FinOps principles apply to any cloud platform and are critical for sustainable data engineering careers.</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </main>
+
+    <script>
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = '✅ Copied!'; btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+            });
+        }
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+        function updateProgress() {
+            const all = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percent = Math.round((checked.length / all.length) * 100);
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            const sections = document.querySelectorAll('.checklist');
+            let completed = 0;
+            sections.forEach(s => {
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (cb.length > 0 && cb.length === ck.length) completed++;
+            });
+            document.getElementById('completedSteps').textContent = completed;
+            document.getElementById('totalSteps').textContent = sections.length;
+            sections.forEach(s => {
+                const name = s.getAttribute('data-section');
+                const nav = document.querySelector(`.nav-item[data-section="${name}"]`);
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (nav) {
+                    nav.classList.remove('completed', 'in-progress');
+                    if (cb.length > 0 && cb.length === ck.length) nav.classList.add('completed');
+                    else if (ck.length > 0) nav.classList.add('in-progress');
+                }
+            });
+            all.forEach(c => localStorage.setItem(c.id, c.checked));
+        }
+        function loadProgress() {
+            document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+                if (localStorage.getItem(c.id) === 'true') { c.checked = true; c.parentElement.classList.add('completed'); }
+            });
+            updateProgress();
+        }
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+            c.addEventListener('change', function() { this.parentElement.classList.toggle('completed', this.checked); });
+        });
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        window.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('section[id]').forEach(sec => {
+                if (scrollY >= (sec.offsetTop - 100)) current = sec.getAttribute('id');
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+            });
+        });
+        window.addEventListener('load', loadProgress);
+    </script>
+</body>
+</html>

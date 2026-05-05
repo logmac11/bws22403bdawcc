@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 3: Advanced Aggregation & Schema Design | Big Data Analytics</title>
+    <style>
+        :root {
+            --primary: #006847; --primary-light: #00895c; --primary-dark: #004d35;
+            --accent: #ff9800; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --info: #2196f3;
+            --bg: #f5f7fa; --card: #ffffff; --text: #2c3e50; --text-light: #7f8c8d; --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f; --sidebar-hover: #2d4a3f; --code-bg: #2d3748; --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px; --transition: all 0.3s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; display: flex; min-height: 100vh; }
+        .sidebar { width: 320px; background: var(--sidebar-bg); color: white; position: fixed; left: 0; top: 0; height: 100vh; overflow-y: auto; padding: 2rem 1.5rem; box-shadow: var(--shadow-lg); z-index: 1000; }
+        .sidebar-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .sidebar-header h1 { font-size: 1.3rem; margin-bottom: 0.5rem; color: white; }
+        .sidebar-header .subtitle { font-size: 0.85rem; opacity: 0.9; color: #a0d4c7; }
+        .progress-section { background: rgba(255,255,255,0.1); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 2rem; }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .progress-header h3 { font-size: 0.95rem; color: white; }
+        .progress-percent { font-weight: 700; color: var(--accent); font-size: 1.3rem; }
+        .progress-bar { height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--accent)); border-radius: 5px; transition: width 0.5s ease; width: 0%; }
+        .progress-steps { font-size: 0.75rem; color: #a0d4c7; text-align: center; }
+        .nav-section { margin-bottom: 2rem; }
+        .nav-section h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; color: #a0d4c7; padding-left: 0.5rem; }
+        .nav-list { list-style: none; }
+        .nav-item { margin-bottom: 0.25rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: white; text-decoration: none; border-radius: 8px; transition: var(--transition); cursor: pointer; font-size: 0.9rem; }
+        .nav-link:hover, .nav-link.active { background: var(--sidebar-hover); color: white; }
+        .nav-link.active { background: var(--primary-light); font-weight: 600; }
+        .nav-icon { margin-right: 0.75rem; font-size: 1.1rem; }
+        .nav-status { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+        .nav-item.completed .nav-status { background: var(--success); }
+        .nav-item.in-progress .nav-status { background: var(--accent); }
+        .main-content { margin-left: 320px; flex: 1; padding: 2rem; max-width: calc(100% - 320px); }
+        .header { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%); color: white; padding: 2rem; border-radius: var(--radius); margin-bottom: 2rem; box-shadow: var(--shadow-lg); }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.85rem; margin-top: 0.5rem; backdrop-filter: blur(10px); }
+        .card { background: var(--card); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border-left: 4px solid var(--primary); transition: var(--transition); }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h3 { color: var(--text); font-size: 1.2rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        .step { background: #f8fafc; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; border: 1px solid var(--border); border-left: 4px solid var(--accent); }
+        .step-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; font-size: 0.85rem; font-weight: 700; margin-right: 0.5rem; }
+        .code-block { background: var(--code-bg); color: var(--code-text); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; position: relative; overflow-x: auto; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; }
+        .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.15); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: var(--transition); }
+        .copy-btn:hover { background: rgba(255,255,255,0.3); }
+        .copy-btn.copied { background: var(--success); }
+        .code-explanation { background: #fff9e6; border-left: 4px solid var(--accent); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+        .code-explanation strong { color: var(--primary-dark); display: block; margin-bottom: 0.5rem; }
+        .expected-output { background: #e8f5e9; border-left: 4px solid var(--success); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; }
+        .expected-output strong { color: #2e7d32; display: block; margin-bottom: 0.5rem; }
+        .checklist { list-style: none; }
+        .checklist li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; }
+        .checklist li:last-child { border-bottom: none; }
+        .checklist input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+        .checklist label { cursor: pointer; flex: 1; }
+        .alert { padding: 1rem 1.25rem; border-radius: 8px; margin: 1rem 0; display: flex; align-items: flex-start; gap: 0.75rem; }
+        .alert-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid var(--success); }
+        .alert-warning { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .alert-info { background: #e3f2fd; border-left: 4px solid var(--info); }
+        .alert-danger { background: #ffebee; border-left: 4px solid var(--danger); }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+        .deliverable-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .deliverable-item { background: white; border-radius: 8px; padding: 1rem; border: 1px solid var(--border); }
+        .deliverable-item .num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 50%; font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem; }
+        .accordion { margin: 1rem 0; }
+        .accordion-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
+        .accordion-header { background: #f8fafc; padding: 1rem 1.25rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; transition: var(--transition); user-select: none; }
+        .accordion-header:hover { background: #eef2f7; }
+        .accordion-header::after { content: '▼'; font-size: 0.75rem; transition: transform 0.3s ease; }
+        .accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+        .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 1.25rem; }
+        .accordion-item.open .accordion-body { max-height: 2000px; padding: 1rem 1.25rem; }
+        .tip-box { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .tip-box strong { color: #1565c0; display: block; margin-bottom: 0.5rem; }
+        .footer { text-align: center; padding: 2rem; color: var(--text-light); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+        @media (max-width: 1024px) { .sidebar { width: 100%; height: auto; position: relative; padding: 1rem; } .main-content { margin-left: 0; max-width: 100%; } body { flex-direction: column; } }
+        [id] { scroll-margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>📘 LAB 3</h1>
+            <p class="subtitle">Advanced Aggregation & Schema Design</p>
+        </div>
+        <div class="progress-section">
+            <div class="progress-header">
+                <h3>📊 Lab Progress</h3>
+                <span class="progress-percent" id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-steps"><span id="completedSteps">0</span> of <span id="totalSteps">8</span> sections completed</div>
+        </div>
+        <nav class="nav-section">
+            <h4>📋 Lab Steps</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="setup"><a href="#setup" class="nav-link"><span class="nav-icon">📦</span><span>Dataset Setup</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="lookup"><a href="#lookup" class="nav-link"><span class="nav-icon">🔗</span><span>$lookup Joins</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="facet"><a href="#facet" class="nav-link"><span class="nav-icon">🔍</span><span>$facet Analytics</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="schema"><a href="#schema" class="nav-link"><span class="nav-icon">📐</span><span>Schema Design</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="merge"><a href="#merge" class="nav-link"><span class="nav-icon">💾</span><span>Materialized Views</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="cloud"><a href="#cloud" class="nav-link"><span class="nav-icon">☁️</span><span>Cloud Bridge</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+        <nav class="nav-section">
+            <h4>📤 Submission</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="deliverables"><a href="#deliverables" class="nav-link"><span class="nav-icon">📦</span><span>Deliverables</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="troubleshoot"><a href="#troubleshoot" class="nav-link"><span class="nav-icon">🛠️</span><span>Troubleshoot</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>📘 LAB 3: Advanced Aggregation & Schema Design for Analytics</h1>
+            <p class="subtitle">Big Data Analytics with Cloud Computing</p>
+            <p class="subtitle">BSc Data Analytics • UTHM</p>
+            <span class="badge">🔒 100% Free • Joins, Multi-Analysis & Analytical Schema Patterns</span>
+        </div>
+        <div class="alert alert-info">
+            <span class="alert-icon">🎯</span>
+            <div><strong>Lab Focus:</strong> Build relational-style joins with $lookup, run multi-dimensional analytics with $facet, design schemas optimized for read-heavy analytics, and create materialized views. Submit pipeline outputs and schema diagrams.</div>
+        </div>
+
+        <section class="card" id="setup">
+            <h2>📦 Step 1: Extended Dataset Setup</h2>
+            <p>We'll expand CampusMart to include <code>customers</code> and <code>orders</code> collections for relational analytics.</p>
+            <div class="step"><span class="step-number">1</span><strong>Create Customers Collection</strong></div>
+            <div class="code-block">
+<code>use campusmart
+db.customers.insertMany([
+  { _id: "C001", name: "Ahmad", tier: "Gold", joinDate: new Date("2025-01-10") },
+  { _id: "C002", name: "Siti", tier: "Silver", joinDate: new Date("2025-03-15") },
+  { _id: "C003", name: "Raju", tier: "Bronze", joinDate: new Date("2025-06-20") }
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="step"><span class="step-number">2</span><strong>Create Orders Collection</strong></div>
+            <div class="code-block">
+<code>db.orders.insertMany([
+  { orderId: "ORD101", customerId: "C001", items: [{ product: "Python Book", qty: 1, price: 55 }], status: "completed", date: new Date("2026-04-10") },
+  { orderId: "ORD102", customerId: "C002", items: [{ product: "Keyboard", qty: 1, price: 180 }], status: "completed", date: new Date("2026-04-12") },
+  { orderId: "ORD103", customerId: "C001", items: [{ product: "Webcam", qty: 2, price: 120 }], status: "pending", date: new Date("2026-04-14") },
+  { orderId: "ORD104", customerId: "C003", items: [{ product: "Kettle", qty: 1, price: 45 }], status: "completed", date: new Date("2026-04-15") }
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <ul class="checklist" data-section="setup">
+                <li><input type="checkbox" id="set-1" onchange="updateProgress()"><label for="set-1">Customers collection created (3 docs)</label></li>
+                <li><input type="checkbox" id="set-2" onchange="updateProgress()"><label for="set-2">Orders collection created (4 docs)</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="lookup">
+            <h2>🔗 Step 2: Relational Joins with $lookup</h2>
+            <p>MongoDB's <code>$lookup</code> performs left outer joins between collections, similar to SQL <code>JOIN</code>.</p>
+            <h4>📌 Task 1: Customer Order History</h4>
+            <div class="code-block">
+<code>db.customers.aggregate([
+  { $lookup: {
+      from: "orders",
+      localField: "_id",
+      foreignField: "customerId",
+      as: "customerOrders"
+  }},
+  { $project: {
+      _id: 0,
+      name: 1,
+      tier: 1,
+      orderCount: { $size: "$customerOrders" },
+      totalSpent: {
+        $sum: "$customerOrders.items.price"
+      }
+  }},
+  { $sort: { totalSpent: -1 } }
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 $lookup Breakdown:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>from</code>: Target collection to join</li>
+                    <li><code>localField</code> / <code>foreignField</code>: Matching fields (like ON clause)</li>
+                    <li><code>as</code>: Name of the new array field containing joined docs</li>
+                    <li><code>$size</code> & <code>$sum</code>: Calculate metrics from joined arrays</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="lookup">
+                <li><input type="checkbox" id="lk-1" onchange="updateProgress()"><label for="lk-1">$lookup pipeline executed successfully</label></li>
+                <li><input type="checkbox" id="lk-2" onchange="updateProgress()"><label for="lk-2">Verified orderCount & totalSpent calculations</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="facet">
+            <h2>🔍 Step 3: Multi-Dimensional Analytics with $facet</h2>
+            <p><code>$facet</code> runs multiple aggregation pipelines in parallel on the same input, returning a single document with multiple analytical views.</p>
+            <h4>📌 Task 2: CampusMart Dashboard Pipeline</h4>
+            <div class="code-block">
+<code>db.orders.aggregate([
+  { $match: { status: "completed" } },
+  { $facet: {
+      revenueByStatus: [
+        { $group: { _id: "$status", total: { $sum: "$items.price" } } }
+      ],
+      topProducts: [
+        { $unwind: "$items" },
+        { $group: { _id: "$items.product", orders: { $sum: 1 } } },
+        { $sort: { orders: -1 } },
+        { $limit: 3 }
+      ],
+      orderStats: [
+        { $group: { _id: null, avgItems: { $avg: { $size: "$items" } }, count: { $sum: 1 } } }
+      ]
+  }}
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 Why $facet?</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li>Runs 3 independent analytics in ONE database pass</li>
+                    <li>Ideal for dashboard widgets (revenue, top items, stats)</li>
+                    <li>Reduces network round-trips and compute overhead</li>
+                </ul>
+            </div>
+            <div class="expected-output">
+                <strong>✅ Expected Structure:</strong>
+                <div class="code-block" style="margin-top: 0.5rem; background: #c8e6c9;">
+<code>{
+  "revenueByStatus": [ { "_id": "completed", "total": 280 } ],
+  "topProducts": [ { "_id": "Keyboard", "orders": 1 }, ... ],
+  "orderStats": [ { "_id": null, "avgItems": 1.33, "count": 3 } ]
+}</code>
+                </div>
+            </div>
+            <ul class="checklist" data-section="facet">
+                <li><input type="checkbox" id="fc-1" onchange="updateProgress()"><label for="fc-1">$facet pipeline executed without errors</label></li>
+                <li><input type="checkbox" id="fc-2" onchange="updateProgress()"><label for="fc-2">Verified all 3 sub-pipeline outputs</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="schema">
+            <h2>📐 Step 4: Schema Design for Analytics</h2>
+            <p>Analytics workloads are <strong>read-heavy</strong>. Schema design should prioritize query performance over write normalization.</p>
+            <h3>📊 Embedding vs. Referencing Decision Matrix</h3>
+            <table>
+                <thead><tr><th>Pattern</th><th>Best For</th><th>Analytics Impact</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Embedding</strong></td><td>1-to-few, data accessed together</td><td>✅ Fast reads, no joins, but limited by 16MB doc size</td></tr>
+                    <tr><td><strong>Referencing</strong></td><td>1-to-many, independent lifecycle</td><td>⚠️ Requires $lookup, slower but scales infinitely</td></tr>
+                    <tr><td><strong>Computed Fields</strong></td><td>Frequently filtered/sorted metrics</td><td>✅ Pre-calculate totals/counts at write time</td></tr>
+                    <tr><td><strong>Bucket Pattern</strong></td><td>Time-series / IoT data</td><td>✅ Groups data by time window, reduces doc count</td></tr>
+                </tbody>
+            </table>
+            <div class="tip-box">
+                <strong>💡 Analytics Best Practice:</strong> Denormalize strategically! Store <code>totalOrderValue</code>, <code>itemCount</code>, and <code>lastPurchaseDate</code> directly in the <code>customers</code> document to avoid real-time $lookup during dashboard queries.
+            </div>
+            <ul class="checklist" data-section="schema">
+                <li><input type="checkbox" id="sc-1" onchange="updateProgress()"><label for="sc-1">Reviewed embedding vs referencing trade-offs</label></li>
+                <li><input type="checkbox" id="sc-2" onchange="updateProgress()"><label for="sc-2">Identified 2 fields to pre-compute for analytics</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="merge">
+            <h2>💾 Step 5: Materialized Views with $merge</h2>
+            <p>Instead of running expensive aggregations repeatedly, save results to a dedicated analytics collection using <code>$merge</code>.</p>
+            <div class="code-block">
+<code>db.orders.aggregate([
+  { $match: { status: "completed" } },
+  { $group: {
+      _id: "$customerId",
+      totalSpent: { $sum: "$items.price" },
+      orderCount: { $sum: 1 },
+      lastOrder: { $max: "$date" }
+  }},
+  { $merge: {
+      into: "customer_analytics",
+      on: "_id",
+      whenMatched: "replace",
+      whenNotMatched: "insert"
+  }}
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 $merge Benefits:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li>Creates/updates <code>customer_analytics</code> automatically</li>
+                    <li><code>whenMatched: "replace"</code> → Keeps analytics fresh</li>
+                    <li>Dashboard queries now run against a single collection (no joins)</li>
+                    <li>Can be scheduled via cron or Atlas Triggers for real-time sync</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="merge">
+                <li><input type="checkbox" id="mg-1" onchange="updateProgress()"><label for="mg-1">$merge pipeline executed successfully</label></li>
+                <li><input type="checkbox" id="mg-2" onchange="updateProgress()"><label for="mg-2">Verified customer_analytics collection contents</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="cloud">
+            <h2>☁️ Step 6: Cloud Computing Bridge</h2>
+            <table>
+                <thead><tr><th>Local Command</th><th>Free Cloud Equivalent (Atlas)</th><th>Cloud Concept</th></tr></thead>
+                <tbody>
+                    <tr><td><code>$lookup</code></td><td>Atlas Schema Validation & Referential Integrity checks</td><td>Managed data relationships</td></tr>
+                    <tr><td><code>$facet</code></td><td>Atlas Charts / BI Connector pre-aggregation</td><td>Serverless analytics pipelines</td></tr>
+                    <tr><td><code>$merge</code></td><td>Atlas Triggers + Realm Functions (auto-materialization)</td><td>Event-driven data synchronization</td></tr>
+                    <tr><td>Local schema design</td><td>Atlas Schema Advisor & index recommendations</td><td>AI-assisted optimization</td></tr>
+                </tbody>
+            </table>
+            <div class="alert alert-info">
+                <span class="alert-icon">🔑</span>
+                <div><strong>Key Takeaway:</strong> In cloud environments, you rarely run raw aggregations against production data. Instead, you build <strong>materialized views</strong> and use managed services to keep them synchronized automatically.</div>
+            </div>
+            <ul class="checklist" data-section="cloud">
+                <li><input type="checkbox" id="cl-1" onchange="updateProgress()"><label for="cl-1">Mapped local patterns to Atlas features</label></li>
+                <li><input type="checkbox" id="cl-2" onchange="updateProgress()"><label for="cl-2">Understood materialized views in cloud architecture</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="deliverables">
+            <h2>📤 Submission: Lab 3 Deliverables</h2>
+            <p>Submit <strong>ALL 5 deliverables</strong> as a single PDF named <code>LAB3_&lt;YourMatric&gt;.pdf</code></p>
+            <div class="deliverable-grid">
+                <div class="deliverable-item"><span class="num">1</span><strong>$lookup Output</strong><br><small>Screenshot of customer order history pipeline</small></div>
+                <div class="deliverable-item"><span class="num">2</span><strong>$facet Output</strong><br><small>Screenshot of 3-subpipeline dashboard results</small></div>
+                <div class="deliverable-item"><span class="num">3</span><strong>Schema Decision</strong><br><small>Bullet list: 2 fields to pre-compute & why</small></div>
+                <div class="deliverable-item"><span class="num">4</span><strong>Materialized View</strong><br><small><code>db.customer_analytics.find()</code> output</small></div>
+                <div class="deliverable-item"><span class="num">5</span><strong>Cloud Reflection</strong><br><small>1-sentence: "How would Atlas Triggers automate $merge?"</small></div>
+            </div>
+            <div class="alert alert-success">
+                <span class="alert-icon">📁</span>
+                <div><strong>File Naming:</strong> <code>LAB3_AD200001.pdf</code><br><strong>Submit to:</strong> UTHM LMS / Google Classroom<br><strong>Deadline:</strong> End of lab session<br><strong>Grading:</strong> ✅ Complete / ❌ Incomplete (>3 deliverables = full credit)</div>
+            </div>
+            <ul class="checklist" data-section="deliverables">
+                <li><input type="checkbox" id="del-1" onchange="updateProgress()"><label for="del-1">All 5 deliverables prepared</label></li>
+                <li><input type="checkbox" id="del-2" onchange="updateProgress()"><label for="del-2">PDF named correctly</label></li>
+                <li><input type="checkbox" id="del-3" onchange="updateProgress()"><label for="del-3">Ready for submission</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="troubleshoot">
+            <h2>🛠️ Troubleshooting & Tips</h2>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "$lookup returns empty array"</div>
+                    <div class="accordion-body"><p>Check field types! <code>localField</code> and <code>foreignField</code> must match exactly (String vs ObjectId is a common mismatch). Use <code>db.collection.distinct("customerId")</code> to verify data types.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "$facet exceeds memory limit"</div>
+                    <div class="accordion-body"><p>Add <code>{ allowDiskUse: true }</code> to the aggregate options, or place <code>$match</code> before <code>$facet</code> to reduce input volume.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "$merge fails with duplicate key"</div>
+                    <div class="accordion-body"><p>Ensure the <code>on</code> field matches your <code>_id</code> structure. If merging into an existing collection, verify index uniqueness constraints don't conflict with your pipeline output.</p></div>
+                </div>
+            </div>
+            <ul class="checklist" data-section="troubleshoot">
+                <li><input type="checkbox" id="ts-1" onchange="updateProgress()"><label for="ts-1">Reviewed troubleshooting section</label></li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>📘 <strong>LAB 3: Advanced Aggregation & Schema Design</strong></p>
+            <p>Big Data Analytics with Cloud Computing | BSc Data Analytics | UTHM</p>
+            <p style="margin-top: 0.5rem;">All tools are 100% free. Patterns scale directly to MongoDB Atlas & cloud data platforms.</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </main>
+
+    <script>
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = '✅ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+            });
+        }
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+        function updateProgress() {
+            const all = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percent = Math.round((checked.length / all.length) * 100);
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            const sections = document.querySelectorAll('.checklist');
+            let completed = 0;
+            sections.forEach(s => {
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (cb.length > 0 && cb.length === ck.length) completed++;
+            });
+            document.getElementById('completedSteps').textContent = completed;
+            document.getElementById('totalSteps').textContent = sections.length;
+            sections.forEach(s => {
+                const name = s.getAttribute('data-section');
+                const nav = document.querySelector(`.nav-item[data-section="${name}"]`);
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (nav) {
+                    nav.classList.remove('completed', 'in-progress');
+                    if (cb.length > 0 && cb.length === ck.length) nav.classList.add('completed');
+                    else if (ck.length > 0) nav.classList.add('in-progress');
+                }
+            });
+            all.forEach(c => localStorage.setItem(c.id, c.checked));
+        }
+        function loadProgress() {
+            document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+                if (localStorage.getItem(c.id) === 'true') { c.checked = true; c.parentElement.classList.add('completed'); }
+            });
+            updateProgress();
+        }
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+            c.addEventListener('change', function() { this.parentElement.classList.toggle('completed', this.checked); });
+        });
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        window.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('section[id]').forEach(sec => {
+                if (scrollY >= (sec.offsetTop - 100)) current = sec.getAttribute('id');
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+            });
+        });
+        window.addEventListener('load', loadProgress);
+    </script>
+</body>
+</html>

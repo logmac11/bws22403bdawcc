@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 9: Kubernetes for Data Workloads | Big Data Analytics</title>
+    <style>
+        :root {
+            --primary: #006847; --primary-light: #00895c; --primary-dark: #004d35;
+            --accent: #ff9800; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --info: #2196f3;
+            --bg: #f5f7fa; --card: #ffffff; --text: #2c3e50; --text-light: #7f8c8d; --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f; --sidebar-hover: #2d4a3f; --code-bg: #2d3748; --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px; --transition: all 0.3s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; display: flex; min-height: 100vh; }
+        .sidebar { width: 320px; background: var(--sidebar-bg); color: white; position: fixed; left: 0; top: 0; height: 100vh; overflow-y: auto; padding: 2rem 1.5rem; box-shadow: var(--shadow-lg); z-index: 1000; }
+        .sidebar-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .sidebar-header h1 { font-size: 1.3rem; margin-bottom: 0.5rem; color: white; }
+        .sidebar-header .subtitle { font-size: 0.85rem; opacity: 0.9; color: #a0d4c7; }
+        .progress-section { background: rgba(255,255,255,0.1); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 2rem; }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .progress-header h3 { font-size: 0.95rem; color: white; }
+        .progress-percent { font-weight: 700; color: var(--accent); font-size: 1.3rem; }
+        .progress-bar { height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--accent)); border-radius: 5px; transition: width 0.5s ease; width: 0%; }
+        .progress-steps { font-size: 0.75rem; color: #a0d4c7; text-align: center; }
+        .nav-section { margin-bottom: 2rem; }
+        .nav-section h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; color: #a0d4c7; padding-left: 0.5rem; }
+        .nav-list { list-style: none; }
+        .nav-item { margin-bottom: 0.25rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: white; text-decoration: none; border-radius: 8px; transition: var(--transition); cursor: pointer; font-size: 0.9rem; }
+        .nav-link:hover, .nav-link.active { background: var(--sidebar-hover); color: white; }
+        .nav-link.active { background: var(--primary-light); font-weight: 600; }
+        .nav-icon { margin-right: 0.75rem; font-size: 1.1rem; }
+        .nav-status { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+        .nav-item.completed .nav-status { background: var(--success); }
+        .nav-item.in-progress .nav-status { background: var(--accent); }
+        .main-content { margin-left: 320px; flex: 1; padding: 2rem; max-width: calc(100% - 320px); }
+        .header { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%); color: white; padding: 2rem; border-radius: var(--radius); margin-bottom: 2rem; box-shadow: var(--shadow-lg); }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.85rem; margin-top: 0.5rem; backdrop-filter: blur(10px); }
+        .card { background: var(--card); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border-left: 4px solid var(--primary); transition: var(--transition); }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h3 { color: var(--text); font-size: 1.2rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        .step { background: #f8fafc; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; border: 1px solid var(--border); border-left: 4px solid var(--accent); }
+        .step-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; font-size: 0.85rem; font-weight: 700; margin-right: 0.5rem; }
+        .code-block { background: var(--code-bg); color: var(--code-text); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; position: relative; overflow-x: auto; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; }
+        .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.15); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: var(--transition); }
+        .copy-btn:hover { background: rgba(255,255,255,0.3); }
+        .copy-btn.copied { background: var(--success); }
+        .code-explanation { background: #fff9e6; border-left: 4px solid var(--accent); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+        .code-explanation strong { color: var(--primary-dark); display: block; margin-bottom: 0.5rem; }
+        .expected-output { background: #e8f5e9; border-left: 4px solid var(--success); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; }
+        .expected-output strong { color: #2e7d32; display: block; margin-bottom: 0.5rem; }
+        .checklist { list-style: none; }
+        .checklist li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; }
+        .checklist li:last-child { border-bottom: none; }
+        .checklist input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+        .checklist label { cursor: pointer; flex: 1; }
+        .alert { padding: 1rem 1.25rem; border-radius: 8px; margin: 1rem 0; display: flex; align-items: flex-start; gap: 0.75rem; }
+        .alert-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid var(--success); }
+        .alert-warning { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .alert-info { background: #e3f2fd; border-left: 4px solid var(--info); }
+        .alert-danger { background: #ffebee; border-left: 4px solid var(--danger); }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+        .deliverable-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .deliverable-item { background: white; border-radius: 8px; padding: 1rem; border: 1px solid var(--border); }
+        .deliverable-item .num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 50%; font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem; }
+        .accordion { margin: 1rem 0; }
+        .accordion-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
+        .accordion-header { background: #f8fafc; padding: 1rem 1.25rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; transition: var(--transition); user-select: none; }
+        .accordion-header:hover { background: #eef2f7; }
+        .accordion-header::after { content: '▼'; font-size: 0.75rem; transition: transform 0.3s ease; }
+        .accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+        .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 1.25rem; }
+        .accordion-item.open .accordion-body { max-height: 2000px; padding: 1rem 1.25rem; }
+        .tip-box { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .tip-box strong { color: #1565c0; display: block; margin-bottom: 0.5rem; }
+        .footer { text-align: center; padding: 2rem; color: var(--text-light); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+        @media (max-width: 1024px) { .sidebar { width: 100%; height: auto; position: relative; padding: 1rem; } .main-content { margin-left: 0; max-width: 100%; } body { flex-direction: column; } }
+        [id] { scroll-margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>📘 LAB 9</h1><p class="subtitle">Kubernetes for Data Workloads</p></div>
+        <div class="progress-section">
+            <div class="progress-header"><h3>📊 Lab Progress</h3><span class="progress-percent" id="progressPercent">0%</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-steps"><span id="completedSteps">0</span> of <span id="totalSteps">7</span> sections completed</div>
+        </div>
+        <nav class="nav-section">
+            <h4>📋 Lab Steps</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="setup"><a href="#setup" class="nav-link"><span class="nav-icon"></span><span>Cluster Setup</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="deploy"><a href="#deploy" class="nav-link"><span class="nav-icon">🚀</span><span>Deploy Data Processor</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="scale"><a href="#scale" class="nav-link"><span class="nav-icon">📈</span><span>Scale & Services</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="jobs"><a href="#jobs" class="nav-link"><span class="nav-icon">⚙️</span><span>Batch Jobs</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="config"><a href="#config" class="nav-link"><span class="nav-icon">🔧</span><span>Config & Secrets</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="cloud"><a href="#cloud" class="nav-link"><span class="nav-icon">☁️</span><span>Cloud Bridge</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+        <nav class="nav-section">
+            <h4>📤 Submission</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="deliverables"><a href="#deliverables" class="nav-link"><span class="nav-icon">📦</span><span>Deliverables</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="troubleshoot"><a href="#troubleshoot" class="nav-link"><span class="nav-icon">🛠️</span><span>Troubleshoot</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>📘 LAB 9: Container Orchestration & Kubernetes for Data Workloads</h1>
+            <p class="subtitle">Big Data Analytics with Cloud Computing</p>
+            <p class="subtitle">BSc Data Analytics • UTHM</p>
+            <span class="badge">🔒 100% Free • Pods, Deployments, Jobs & Auto-Scaling</span>
+        </div>
+        <div class="alert alert-info">
+            <span class="alert-icon">🎯</span>
+            <div><strong>Lab Focus:</strong> Deploy, scale, and manage containerized data workloads using Kubernetes. Learn Pod lifecycle, Deployments, Services, Jobs, and configuration management. Submit `kubectl` outputs and scaling proofs.</div>
+        </div>
+
+        <section class="card" id="setup">
+            <h2>📦 Step 1: Local Kubernetes Cluster Setup</h2>
+            <p>We'll use <strong>minikube</strong> (free, local K8s) to avoid cloud billing while learning production-grade orchestration.</p>
+            <div class="code-block">
+<code># Install kubectl (K8s CLI)
+# Windows (winget): winget install Kubernetes.kubectl
+# macOS: brew install kubectl
+# Linux: sudo apt install kubectl
+
+# Install minikube
+# Download from: https://minikube.sigs.k8s.io/docs/start/
+
+# Start local cluster
+minikube start --cpus=2 --memory=4096
+
+# Verify cluster
+kubectl cluster-info
+kubectl get nodes</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="expected-output">
+                <strong>✅ Expected Output:</strong>
+                <div class="code-block" style="margin-top: 0.5rem; background: #c8e6c9;">
+<code>NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   2m    v1.28.0</code>
+                </div>
+            </div>
+            <ul class="checklist" data-section="setup">
+                <li><input type="checkbox" id="set-1" onchange="updateProgress()"><label for="set-1">kubectl & minikube installed</label></li>
+                <li><input type="checkbox" id="set-2" onchange="updateProgress()"><label for="set-2">Cluster running & node status Ready</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="deploy">
+            <h2>🚀 Step 2: Deploy a Data Processor</h2>
+            <p>Create a Deployment that runs a simple Python data processing script in a container.</p>
+            <div class="code-block">
+<code>cat > data-processor.yaml << 'EOF'
+apiVersion: apps/v1
+kind: Deployment
+meta
+  name: campusmart-processor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: data-processor
+  template:
+    metadata:
+      labels:
+        app: data-processor
+    spec:
+      containers:
+      - name: processor
+        image: python:3.10-slim
+        command: ["python", "-c"]
+        args:
+          - |
+            import time, random
+            categories = ["Textbooks", "Electronics", "Appliances"]
+            while True:
+                print(f"Processing: {random.choice(categories)} | Price: {random.uniform(10,200):.2f}")
+                time.sleep(5)
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+EOF
+
+kubectl apply -f data-processor.yaml</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 Deployment vs Pod:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>Pod</code>: Smallest deployable unit (1+ containers)</li>
+                    <li><code>Deployment</code>: Manages Pod replicas, rolling updates, self-healing</li>
+                    <li><code>replicas: 2</code>: K8s ensures 2 pods always run</li>
+                    <li><code>resources</code>: Prevents noisy neighbors in shared clusters</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="deploy">
+                <li><input type="checkbox" id="dep-1" onchange="updateProgress()"><label for="dep-1">YAML created & applied</label></li>
+                <li><input type="checkbox" id="dep-2" onchange="updateProgress()"><label for="dep-2">2 pods running (<code>kubectl get pods</code>)</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="scale">
+            <h2>📈 Step 3: Scale & Expose via Services</h2>
+            <p>Scale horizontally to handle load, then expose internally via a ClusterIP service.</p>
+            <div class="code-block">
+<code># Scale to 5 replicas
+kubectl scale deployment campusmart-processor --replicas=5
+
+# Verify scaling
+kubectl get pods -w
+
+# Expose internally
+kubectl expose deployment campusmart-processor \
+  --type=ClusterIP \
+  --name=processor-service \
+  --port=8080 \
+  --target-port=8080
+
+kubectl get svc</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="alert alert-info">
+                <span class="alert-icon">💡</span>
+                <div><strong>Why Services?</strong> Pods are ephemeral (IPs change on restart). Services provide stable DNS names & load balancing across healthy pods. In data pipelines, services route traffic to workers, brokers, or APIs.</div>
+            </div>
+            <ul class="checklist" data-section="scale">
+                <li><input type="checkbox" id="scl-1" onchange="updateProgress()"><label for="scl-1">Scaled to 5 replicas successfully</label></li>
+                <li><input type="checkbox" id="scl-2" onchange="updateProgress()"><label for="scl-2">Service created & ClusterIP assigned</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="jobs">
+            <h2>⚙️ Step 4: Batch Processing with Kubernetes Jobs</h2>
+            <p>Deployments run forever. <code>Jobs</code> run to completion (ideal for ETL, backfills, model training).</p>
+            <div class="code-block">
+<code>cat > etl-job.yaml << 'EOF'
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: campusmart-etl-batch
+spec:
+  ttlSecondsAfterFinished: 100
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - name: etl-runner
+        image: python:3.10-slim
+        command: ["python", "-c"]
+        args:
+          - |
+            print("📥 Extracting CampusMart data...")
+            print("🔄 Transforming & cleaning...")
+            print("✅ Loading to analytics warehouse...")
+            print("🎉 Job completed successfully")
+      restartPolicy: Never
+EOF
+
+kubectl apply -f etl-job.yaml
+kubectl get jobs -w</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 Job Key Fields:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>backoffLimit: 3</code>: Retries failed pods 3 times before marking failed</li>
+                    <li><code>restartPolicy: Never</code>: Jobs don't restart completed pods</li>
+                    <li><code>ttlSecondsAfterFinished</code>: Auto-cleans completed job pods (saves cluster resources)</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="jobs">
+                <li><input type="checkbox" id="job-1" onchange="updateProgress()"><label for="job-1">Job YAML applied</label></li>
+                <li><input type="checkbox" id="job-2" onchange="updateProgress()"><label for="job-2">Job reached COMPLETED status</label></li>
+                <li><input type="checkbox" id="job-3" onchange="updateProgress()"><label for="job-3">Viewed logs: <code>kubectl logs job/campusmart-etl-batch</code></label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="config">
+            <h2>🔧 Step 5: Configuration & Secrets Management</h2>
+            <p>Externalize environment variables using ConfigMaps & Secrets instead of hardcoding in YAML.</p>
+            <div class="code-block">
+<code># Create ConfigMap
+kubectl create configmap processor-config \
+  --from-literal=LOG_LEVEL=info \
+  --from-literal=BATCH_SIZE=1000
+
+# Create Secret (base64 encoded automatically)
+kubectl create secret generic db-credentials \
+  --from-literal=username=student \
+  --from-literal=password=uthm2026
+
+# View (secrets are masked)
+kubectl get configmap processor-config -o yaml
+kubectl get secret db-credentials -o yaml</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="alert alert-warning">
+                <span class="alert-icon">⚠️</span>
+                <div><strong>Production Note:</strong> In cloud K8s, use AWS Secrets Manager / GCP Secret Manager / HashiCorp Vault instead of native K8s Secrets (which are only base64 encoded, not encrypted at rest by default).</div>
+            </div>
+            <ul class="checklist" data-section="config">
+                <li><input type="checkbox" id="cfg-1" onchange="updateProgress()"><label for="cfg-1">ConfigMap created</label></li>
+                <li><input type="checkbox" id="cfg-2" onchange="updateProgress()"><label for="cfg-2">Secret created & verified</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="cloud">
+            <h2>☁️ Step 6: Cloud Computing Bridge</h2>
+            <table>
+                <thead><tr><th>Local minikube/kubectl</th><th>Managed Cloud Equivalent</th><th>Cloud Concept</th></tr></thead>
+                <tbody>
+                    <tr><td><code>minikube start</code></td><td>Amazon EKS / Google GKE / Azure AKS</td><td>Managed control plane</td></tr>
+                    <tr><td><code>kubectl scale</code></td><td>Horizontal Pod Autoscaler (HPA) + Cluster Autoscaler</td><td>Auto-scaling workloads & nodes</td></tr>
+                    <tr><td>Native K8s Secrets</td><td>Cloud KMS + External Secrets Operator / AWS Secrets Manager</td><td>Encrypted secret rotation</td></tr>
+                    <tr><td>K8s Jobs</td><td>Cloud Run Jobs / AWS Batch / GCP Cloud Run</td><td>Serverless batch processing</td></tr>
+                </tbody>
+            </table>
+            <div class="alert alert-info">
+                <span class="alert-icon">🔑</span>
+                <div><strong>Key Takeaway:</strong> Kubernetes is the universal orchestration layer across all major clouds. Learning K8s locally translates directly to managing enterprise data platforms, ML training clusters, and serverless batch workloads in AWS/GCP/Azure.</div>
+            </div>
+            <ul class="checklist" data-section="cloud">
+                <li><input type="checkbox" id="cl-1" onchange="updateProgress()"><label for="cl-1">Mapped local K8s to managed cloud services</label></li>
+                <li><input type="checkbox" id="cl-2" onchange="updateProgress()"><label for="cl-2">Understood auto-scaling & managed secrets</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="deliverables">
+            <h2>📤 Submission: Lab 9 Deliverables</h2>
+            <div class="deliverable-grid">
+                <div class="deliverable-item"><span class="num">1</span><strong>Deployment Status</strong><br><small><code>kubectl get pods</code> showing 5 running replicas</small></div>
+                <div class="deliverable-item"><span class="num">2</span><strong>Service Output</strong><br><small><code>kubectl get svc</code> showing ClusterIP</small></div>
+                <div class="deliverable-item"><span class="num">3</span><strong>Job Completion</strong><br><small><code>kubectl get jobs</code> showing COMPLETED</small></div>
+                <div class="deliverable-item"><span class="num">4</span><strong>Config/Secret Proof</strong><br><small>Output of configmap & secret creation</small></div>
+                <div class="deliverable-item"><span class="num">5</span><strong>Cloud Reflection</strong><br><small>1-sentence: "Why would a data team choose K8s over running scripts on a VM?"</small></div>
+            </div>
+            <div class="alert alert-success">
+                <span class="alert-icon">📁</span>
+                <div><strong>Format:</strong> PDF export from terminal<br><strong>Name:</strong> <code>LAB9_AD200001</code><br><strong>Grading:</strong> ✅ Complete / ❌ Incomplete (>3 deliverables = full credit)</div>
+            </div>
+            <ul class="checklist" data-section="deliverables">
+                <li><input type="checkbox" id="del-1" onchange="updateProgress()"><label for="del-1">All 5 deliverables prepared</label></li>
+                <li><input type="checkbox" id="del-2" onchange="updateProgress()"><label for="del-2">Named correctly & ready to submit</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="troubleshoot">
+            <h2>🛠️ Troubleshooting & Tips</h2>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Pending" pods that won't start</div>
+                    <div class="accordion-body"><p>Check resources: <code>minikube start --cpus=4 --memory=8192</code>. If using Docker driver, ensure Docker Desktop has allocated enough CPU/RAM. Run <code>minikube delete && minikube start</code> to reset.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "CrashLoopBackOff"</div>
+                    <div class="accordion-body"><p>Pod is failing repeatedly. Check logs: <code>kubectl logs <pod-name></code> or <code>kubectl logs job/<job-name></code>. Fix syntax/errors in command/args, then delete & reapply.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "ImagePullBackOff"</div>
+                    <div class="accordion-body"><p>Typo in image name or private registry auth issue. For public images like <code>python:3.10-slim</code>, verify spelling. Run <code>minikube ssh</code> to test connectivity.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">💡 How to clean up after lab?</div>
+                    <div class="accordion-body"><p><code>kubectl delete -f data-processor.yaml</code><br><code>kubectl delete -f etl-job.yaml</code><br><code>kubectl delete svc processor-service</code><br><code>minikube stop</code> (or <code>delete</code> to free all disk space)</p></div>
+                </div>
+            </div>
+            <ul class="checklist" data-section="troubleshoot">
+                <li><input type="checkbox" id="ts-1" onchange="updateProgress()"><label for="ts-1">Reviewed troubleshooting section</label></li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>📘 <strong>LAB 9: Container Orchestration & Kubernetes for Data Workloads</strong></p>
+            <p>Big Data Analytics with Cloud Computing | BSc Data Analytics | UTHM</p>
+            <p style="margin-top: 0.5rem;">All tools are 100% free. Patterns scale directly to EKS, GKE, AKS, & cloud-native data platforms.</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </main>
+
+    <script>
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = '✅ Copied!'; btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+            });
+        }
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+        function updateProgress() {
+            const all = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percent = Math.round((checked.length / all.length) * 100);
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            const sections = document.querySelectorAll('.checklist');
+            let completed = 0;
+            sections.forEach(s => {
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (cb.length > 0 && cb.length === ck.length) completed++;
+            });
+            document.getElementById('completedSteps').textContent = completed;
+            document.getElementById('totalSteps').textContent = sections.length;
+            sections.forEach(s => {
+                const name = s.getAttribute('data-section');
+                const nav = document.querySelector(`.nav-item[data-section="${name}"]`);
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (nav) {
+                    nav.classList.remove('completed', 'in-progress');
+                    if (cb.length > 0 && cb.length === ck.length) nav.classList.add('completed');
+                    else if (ck.length > 0) nav.classList.add('in-progress');
+                }
+            });
+            all.forEach(c => localStorage.setItem(c.id, c.checked));
+        }
+        function loadProgress() {
+            document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+                if (localStorage.getItem(c.id) === 'true') { c.checked = true; c.parentElement.classList.add('completed'); }
+            });
+            updateProgress();
+        }
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+            c.addEventListener('change', function() { this.parentElement.classList.toggle('completed', this.checked); });
+        });
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        window.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('section[id]').forEach(sec => {
+                if (scrollY >= (sec.offsetTop - 100)) current = sec.getAttribute('id');
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+            });
+        });
+        window.addEventListener('load', loadProgress);
+    </script>
+</body>
+</html>

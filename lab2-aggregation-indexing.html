@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 2: Aggregation Pipeline & Performance Tuning | Big Data Analytics</title>
+    <style>
+        :root {
+            --primary: #006847;
+            --primary-light: #00895c;
+            --primary-dark: #004d35;
+            --accent: #ff9800;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --info: #2196f3;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --text-light: #7f8c8d;
+            --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f;
+            --sidebar-hover: #2d4a3f;
+            --code-bg: #2d3748;
+            --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--sidebar-bg);
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 2rem 1.5rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h1 { font-size: 1.3rem; margin-bottom: 0.5rem; color: white; }
+        .sidebar-header .subtitle { font-size: 0.85rem; opacity: 0.9; color: #a0d4c7; }
+
+        .progress-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-header h3 { font-size: 0.95rem; color: white; }
+        .progress-percent { font-weight: 700; color: var(--accent); font-size: 1.3rem; }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--accent));
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-steps { font-size: 0.75rem; color: #a0d4c7; text-align: center; }
+
+        .nav-section { margin-bottom: 2rem; }
+        .nav-section h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            color: #a0d4c7;
+            padding-left: 0.5rem;
+        }
+
+        .nav-list { list-style: none; }
+        .nav-item { margin-bottom: 0.25rem; }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: var(--transition);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover, .nav-link.active { background: var(--sidebar-hover); color: white; }
+        .nav-link.active { background: var(--primary-light); font-weight: 600; }
+        .nav-icon { margin-right: 0.75rem; font-size: 1.1rem; }
+
+        .nav-status {
+            margin-left: auto;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .nav-item.completed .nav-status { background: var(--success); }
+        .nav-item.in-progress .nav-status { background: var(--accent); }
+
+        .main-content {
+            margin-left: 320px;
+            flex: 1;
+            padding: 2rem;
+            max-width: calc(100% - 320px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h3 { color: var(--text); font-size: 1.2rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+
+        .step {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 0.75rem 0;
+            position: relative;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover { background: rgba(255,255,255,0.3); }
+        .copy-btn.copied { background: var(--success); }
+
+        .code-explanation {
+            background: #fff9e6;
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            margin: 0.75rem 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .code-explanation strong { color: var(--primary-dark); display: block; margin-bottom: 0.5rem; }
+
+        .expected-output {
+            background: #e8f5e9;
+            border-left: 4px solid var(--success);
+            padding: 1rem;
+            margin: 0.75rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .expected-output strong { color: #2e7d32; display: block; margin-bottom: 0.5rem; }
+
+        .checklist { list-style: none; }
+        .checklist li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .checklist li:last-child { border-bottom: none; }
+        .checklist input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+        .checklist label { cursor: pointer; flex: 1; }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .alert-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid var(--success); }
+        .alert-warning { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .alert-info { background: #e3f2fd; border-left: 4px solid var(--info); }
+        .alert-danger { background: #ffebee; border-left: 4px solid var(--danger); }
+
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        .deliverable-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .deliverable-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .deliverable-item .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .accordion { margin: 1rem 0; }
+        .accordion-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            background: #f8fafc;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .accordion-header:hover { background: #eef2f7; }
+        .accordion-header::after { content: '▼'; font-size: 0.75rem; transition: transform 0.3s ease; }
+        .accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.25rem;
+        }
+
+        .accordion-item.open .accordion-body { max-height: 2000px; padding: 1rem 1.25rem; }
+
+        .tip-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .tip-box strong { color: #1565c0; display: block; margin-bottom: 0.5rem; }
+
+        .warning-box {
+            background: #fff3e0;
+            border: 1px solid #ffcc80;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .warning-box strong { color: #e65100; display: block; margin-bottom: 0.5rem; }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 100%; height: auto; position: relative; padding: 1rem; }
+            .main-content { margin-left: 0; max-width: 100%; }
+            body { flex-direction: column; }
+        }
+
+        [id] { scroll-margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>📘 LAB 2</h1>
+            <p class="subtitle">Aggregation Pipeline & Indexing</p>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-header">
+                <h3>📊 Lab Progress</h3>
+                <span class="progress-percent" id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-steps">
+                <span id="completedSteps">0</span> of <span id="totalSteps">8</span> sections completed
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <h4>📋 Lab Steps</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="overview">
+                    <a href="#overview" class="nav-link"><span class="nav-icon">🔄</span><span>Pipeline Overview</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="basic">
+                    <a href="#basic" class="nav-link"><span class="nav-icon">📊</span><span>Basic Aggregation</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="advanced">
+                    <a href="#advanced" class="nav-link"><span class="nav-icon">🔍</span><span>Advanced Pipeline</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="indexing">
+                    <a href="#indexing" class="nav-link"><span class="nav-icon">⚡</span><span>Indexing & Performance</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="export">
+                    <a href="#export" class="nav-link"><span class="nav-icon">📤</span><span>Export Results</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="cloud">
+                    <a href="#cloud" class="nav-link"><span class="nav-icon">☁️</span><span>Cloud Bridge</span><span class="nav-status"></span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <h4>📤 Submission</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="deliverables">
+                    <a href="#deliverables" class="nav-link"><span class="nav-icon">📦</span><span>Deliverables</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="troubleshoot">
+                    <a href="#troubleshoot" class="nav-link"><span class="nav-icon">🛠️</span><span>Troubleshoot</span><span class="nav-status"></span></a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>📘 LAB 2: Aggregation Pipeline & Performance Tuning</h1>
+            <p class="subtitle">Big Data Analytics with Cloud Computing</p>
+            <p class="subtitle">BSc Data Analytics • UTHM</p>
+            <span class="badge">🔒 100% Free • Multi-Stage Analytics & Index Optimization</span>
+        </div>
+
+        <div class="alert alert-info">
+            <span class="alert-icon">🎯</span>
+            <div><strong>Lab Focus:</strong> Build multi-stage aggregation pipelines for analytics, create indexes, measure performance gains, and export results. Submit screenshots of pipeline outputs and explain plans.</div>
+        </div>
+
+        <section class="card" id="overview">
+            <h2>🔄 What is the Aggregation Pipeline?</h2>
+            <p>The MongoDB Aggregation Framework processes data records through a <strong>multi-stage pipeline</strong>. Each stage transforms the data, and the output of one stage becomes the input for the next.</p>
+            
+            <div class="alert alert-success">
+                <span class="alert-icon">📚</span>
+                <div><strong>SQL Equivalent:</strong> Similar to <code>SELECT ... GROUP BY ... HAVING ... ORDER BY</code>, but more flexible and capable of handling nested documents, arrays, and complex transformations.</div>
+            </div>
+
+            <h3>🏗️ Pipeline Architecture</h3>
+            <div class="code-block">
+<code>db.collection.aggregate([
+  { $match: { ... } },      // Stage 1: Filter documents
+  { $group: { ... } },      // Stage 2: Group & calculate
+  { $sort: { ... } },       // Stage 3: Order results
+  { $project: { ... } }     // Stage 4: Reshape output
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 Key Rules:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li>Stages execute <strong>in order</strong> (top to bottom)</li>
+                    <li>Place <code>$match</code> early to reduce data volume</li>
+                    <li>Each stage outputs a stream of documents to the next stage</li>
+                    <li>Results can be saved to a new collection using <code>$out</code> or <code>$merge</code></li>
+                </ul>
+            </div>
+
+            <ul class="checklist" data-section="overview">
+                <li><input type="checkbox" id="ov-1" onchange="updateProgress()"><label for="ov-1">Understood pipeline concept & stage order</label></li>
+                <li><input type="checkbox" id="ov-2" onchange="updateProgress()"><label for="ov-2">Recognized SQL vs MongoDB aggregation differences</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="basic">
+            <h2>📊 Step 1: Basic Aggregation ($match, $group, $sort)</h2>
+            <p>We'll analyze CampusMart pricing trends and category performance.</p>
+
+            <h4>📌 Task 1: Average Price by Category</h4>
+            <div class="code-block">
+<code>use campusmart
+
+db.products.aggregate([
+  { $match: { inStock: true } },
+  { $group: {
+      _id: "$category",
+      avgPrice: { $avg: "$price" },
+      totalItems: { $sum: 1 },
+      maxPrice: { $max: "$price" }
+  }},
+  { $sort: { avgPrice: -1 } }
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 Stage Breakdown:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>$match</code>: Filters only in-stock products (reduces processing load)</li>
+                    <li><code>$group</code>: Groups by <code>category</code>, calculates avg/sum/max</li>
+                    <li><code>$sort</code>: Orders results by average price (highest first)</li>
+                    <li><code>_id: "$category"</code>: The <code>$</code> references the field value</li>
+                </ul>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ Expected Output:</strong>
+                <div class="code-block" style="margin-top: 0.5rem; background: #c8e6c9;">
+<code>[
+  { _id: 'Electronics', avgPrice: 128.33, totalItems: 3, maxPrice: 180 },
+  { _id: 'Textbooks', avgPrice: 55, totalItems: 3, maxPrice: 65 },
+  { _id: 'Appliances', avgPrice: 45, totalItems: 1, maxPrice: 45 }
+]</code>
+                </div>
+            </div>
+
+            <h4>📌 Task 2: Seller Performance Metrics</h4>
+            <div class="code-block">
+<code>db.products.aggregate([
+  { $group: {
+      _id: "$seller.name",
+      avgRating: { $avg: "$seller.rating" },
+      productCount: { $sum: 1 },
+      totalValue: { $sum: "$price" }
+  }},
+  { $match: { avgRating: { $gte: 4.7 } } },
+  { $sort: { avgRating: -1 } }
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <ul class="checklist" data-section="basic">
+                <li><input type="checkbox" id="bas-1" onchange="updateProgress()"><label for="bas-1">Task 1: Category pricing pipeline executed</label></li>
+                <li><input type="checkbox" id="bas-2" onchange="updateProgress()"><label for="bas-2">Task 2: Seller performance pipeline executed</label></li>
+                <li><input type="checkbox" id="bas-3" onchange="updateProgress()"><label for="bas-3">Understood $group accumulator operators</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="advanced">
+            <h2>🔍 Step 2: Advanced Pipeline ($project, $unwind, $limit)</h2>
+            <p>Reshape data, deconstruct arrays, and control output size.</p>
+
+            <h4>📌 Task 3: Reshape & Limit Output</h4>
+            <div class="code-block">
+<code>db.products.aggregate([
+  { $match: { category: "Textbooks" } },
+  { $project: {
+      _id: 0,
+      title: "$name",
+      priceMYR: "$price",
+      currency: "$currency",
+      yearPublished: "$specs.year"
+  }},
+  { $sort: { priceMYR: 1 } },
+  { $limit: 2 }
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 New Operators:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>$project</code>: Renames fields, excludes <code>_id</code>, extracts nested values</li>
+                    <li><code>$limit</code>: Restricts output to N documents (saves memory)</li>
+                    <li>Field references use <code>"$fieldName"</code> syntax</li>
+                </ul>
+            </div>
+
+            <h4>📌 Task 4: Unwind Tags Array</h4>
+            <div class="code-block">
+<code>db.products.aggregate([
+  { $unwind: "$tags" },
+  { $group: {
+      _id: "$tags",
+      count: { $sum: 1 }
+  }},
+  { $sort: { count: -1 } },
+  { $limit: 5 }
+])</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ Expected Output:</strong> Top 5 most common tags across all products.
+            </div>
+
+            <ul class="checklist" data-section="advanced">
+                <li><input type="checkbox" id="adv-1" onchange="updateProgress()"><label for="adv-1">Task 3: Project & limit pipeline executed</label></li>
+                <li><input type="checkbox" id="adv-2" onchange="updateProgress()"><label for="adv-2">Task 4: Unwind & tag counting executed</label></li>
+                <li><input type="checkbox" id="adv-3" onchange="updateProgress()"><label for="adv-3">Understood when to use $project vs $group</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="indexing">
+            <h2>⚡ Step 3: Indexing & Performance Tuning</h2>
+            <p>Indexes speed up queries by avoiding full collection scans. Critical for big data workloads.</p>
+
+            <h4>📊 Before Indexing: Check Execution Plan</h4>
+            <div class="code-block">
+<code>db.products.find({ category: "Textbooks", price: { $gt: 50 } }).explain("executionStats")</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 Look for:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>"stage": "COLLSCAN"</code> → Full collection scan (slow)</li>
+                    <li><code>"totalDocsExamined"</code> vs <code>"nReturned"</code> → High ratio = inefficient</li>
+                    <li><code>"executionTimeMillis"</code> → Query duration</li>
+                </ul>
+            </div>
+
+            <h4>🚀 Create Compound Index</h4>
+            <div class="code-block">
+<code>db.products.createIndex({ category: 1, price: 1 }, { name: "category_price_idx" })</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 Index Syntax:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>1</code> = Ascending, <code>-1</code> = Descending</li>
+                    <li>Compound indexes support queries on prefix fields</li>
+                    <li><code>name</code> option helps identify indexes later</li>
+                </ul>
+            </div>
+
+            <h4>📈 After Indexing: Verify Performance Gain</h4>
+            <div class="code-block">
+<code>db.products.find({ category: "Textbooks", price: { $gt: 50 } }).explain("executionStats")</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ Success Indicators:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>"stage": "IXSCAN"</code> (Index Scan) instead of COLLSCAN</li>
+                    <li><code>"totalDocsExamined"</code> ≈ <code>"nReturned"</code></li>
+                    <li><code>"executionTimeMillis"</code> drops significantly</li>
+                </ul>
+            </div>
+
+            <ul class="checklist" data-section="indexing">
+                <li><input type="checkbox" id="idx-1" onchange="updateProgress()"><label for="idx-1">Ran explain() before indexing</label></li>
+                <li><input type="checkbox" id="idx-2" onchange="updateProgress()"><label for="idx-2">Created compound index successfully</label></li>
+                <li><input type="checkbox" id="idx-3" onchange="updateProgress()"><label for="idx-3">Ran explain() after indexing & observed IXSCAN</label></li>
+                <li><input type="checkbox" id="idx-4" onchange="updateProgress()"><label for="idx-4">Noted execution time improvement</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="export">
+            <h2>📤 Step 4: Export Aggregation Results</h2>
+            <p>Save pipeline outputs to a new collection, then export to JSON for external analytics (Power BI, Python, Excel).</p>
+
+            <h4>📦 Save Results to New Collection</h4>
+            <div class="code-block">
+<code>db.products.aggregate([
+  { $group: {
+      _id: "$category",
+      avgPrice: { $avg: "$price" },
+      totalItems: { $sum: 1 }
+  }},
+  { $out: "category_analytics" }
+], { allowDiskUse: true })</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 $out Stage:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li>Creates/replaces <code>category_analytics</code> collection</li>
+                    <li><code>allowDiskUse: true</code> permits large pipeline operations</li>
+                    <li>Must be the <strong>final stage</strong> in the pipeline</li>
+                </ul>
+            </div>
+
+            <h4>💾 Export to JSON File</h4>
+            <p>Exit mongosh (<code>exit</code>) and run in PowerShell:</p>
+            <div class="code-block">
+<code>mongoexport --uri "mongodb://student:uthm2026@localhost:27017/campusmart" `
+  --collection category_analytics `
+  --out category_analytics.json</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ Expected:</strong> <code>connected to: mongodb://... exported: 3 records</code>
+            </div>
+
+            <ul class="checklist" data-section="export">
+                <li><input type="checkbox" id="exp-1" onchange="updateProgress()"><label for="exp-1">Pipeline with $out executed successfully</label></li>
+                <li><input type="checkbox" id="exp-2" onchange="updateProgress()"><label for="exp-2">Verified new collection exists</label></li>
+                <li><input type="checkbox" id="exp-3" onchange="updateProgress()"><label for="exp-3">Exported JSON file created</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="cloud">
+            <h2>☁️ Step 5: Cloud Computing Bridge</h2>
+            <p>How aggregation & indexing translate to managed cloud platforms.</p>
+
+            <table>
+                <thead>
+                    <tr><th>Local Command</th><th>Free Cloud Equivalent (MongoDB Atlas M0)</th><th>Cloud Concept Learned</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>db.collection.aggregate([...])</code></td><td>Atlas Aggregation Pipeline Builder (UI) or CLI</td><td>Managed analytics execution</td></tr>
+                    <tr><td><code>createIndex()</code></td><td>Atlas Performance Advisor & auto-index recommendations</td><td>Automated performance tuning</td></tr>
+                    <tr><td><code>explain("executionStats")</code></td><td>Atlas Query Profiler & Slow Query Logs</td><td>Cloud observability & monitoring</td></tr>
+                    <tr><td><code>mongoexport</code></td><td>Atlas Data Export UI or scheduled exports to S3</td><td>Cloud data egress & integration</td></tr>
+                    <tr><td>Local index storage</td><td>Atlas index storage counted in free tier limits</td><td>Cloud resource accounting</td></tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-info">
+                <span class="alert-icon">🔑</span>
+                <div><strong>Key Takeaway:</strong> Atlas provides visual tools for aggregation and automatic index recommendations, but understanding the underlying CLI commands ensures you can debug, optimize, and script pipelines anywhere.</div>
+            </div>
+
+            <ul class="checklist" data-section="cloud">
+                <li><input type="checkbox" id="cl-1" onchange="updateProgress()"><label for="cl-1">Mapped local commands to Atlas features</label></li>
+                <li><input type="checkbox" id="cl-2" onchange="updateProgress()"><label for="cl-2">Understood cloud performance monitoring concepts</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="deliverables">
+            <h2>📤 Submission: Lab 2 Deliverables</h2>
+            <p>Submit <strong>ALL 5 deliverables</strong> as a single PDF named <code>LAB2_&lt;YourMatric&gt;.pdf</code></p>
+
+            <div class="deliverable-grid">
+                <div class="deliverable-item">
+                    <span class="num">1</span>
+                    <strong>Basic Aggregation Output</strong><br>
+                    <small>Screenshot of category pricing pipeline results</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">2</span>
+                    <strong>Advanced Pipeline Output</strong><br>
+                    <small>Screenshot of $unwind tag counting results</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">3</span>
+                    <strong>Index Performance Proof</strong><br>
+                    <small>Before/after <code>explain("executionStats")</code> showing COLLSCAN → IXSCAN</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">4</span>
+                    <strong>Export Confirmation</strong><br>
+                    <small><code>mongoexport</code> success message + file preview</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">5</span>
+                    <strong>Cloud Reflection</strong><br>
+                    <small>1-sentence: "How would Atlas Performance Advisor change your indexing strategy?"</small>
+                </div>
+            </div>
+
+            <div class="alert alert-success">
+                <span class="alert-icon">📁</span>
+                <div>
+                    <strong>File Naming:</strong> <code>LAB2_AD200001.pdf</code><br>
+                    <strong>Submit to:</strong> UTHM LMS / Google Classroom<br>
+                    <strong>Deadline:</strong> End of lab session<br>
+                    <strong>Grading:</strong> ✅ Complete / ❌ Incomplete (>3 deliverables = full credit)
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="deliverables">
+                <li><input type="checkbox" id="del-1" onchange="updateProgress()"><label for="del-1">All 5 deliverables prepared</label></li>
+                <li><input type="checkbox" id="del-2" onchange="updateProgress()"><label for="del-2">PDF named correctly</label></li>
+                <li><input type="checkbox" id="del-3" onchange="updateProgress()"><label for="del-3">Ready for submission</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="troubleshoot">
+            <h2>🛠️ Troubleshooting & Tips</h2>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Pipeline stage $out must be the last stage"</div>
+                    <div class="accordion-body">
+                        <p><code>$out</code> or <code>$merge</code> must be the final stage. Move any <code>$sort</code>, <code>$limit</code>, or <code>$project</code> before it.</p>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Exceeded memory limit for $group"</div>
+                    <div class="accordion-body">
+                        <p>Add <code>{ allowDiskUse: true }</code> to the aggregate options, or place <code>$match</code> earlier to reduce data volume.</p>
+                        <div class="code-block">
+                            <code>db.collection.aggregate([...], { allowDiskUse: true })</code>
+                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ Index not being used (still COLLSCAN)</div>
+                    <div class="accordion-body">
+                        <p>1. Verify query matches index prefix exactly<br>
+                        2. Check field types match index (String vs Number)<br>
+                        3. Run <code>db.products.getIndexes()</code> to confirm index exists<br>
+                        4. Use <code>.explain("executionStats")</code> to debug</p>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ mongoexport: File already exists</div>
+                    <div class="accordion-body">
+                        <p>Delete or rename the existing file, or use a new filename:<br>
+                        <code>--out category_analytics_v2.json</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="troubleshoot">
+                <li><input type="checkbox" id="ts-1" onchange="updateProgress()"><label for="ts-1">Reviewed troubleshooting section</label></li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>📘 <strong>LAB 2: Aggregation Pipeline & Performance Tuning</strong></p>
+            <p>Big Data Analytics with Cloud Computing | BSc Data Analytics | UTHM</p>
+            <p style="margin-top: 0.5rem;">All tools are 100% free. Skills transfer directly to MongoDB Atlas performance tools.</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </main>
+
+    <script>
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = '✅ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+
+        function updateProgress() {
+            const allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checkedCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percent = Math.round((checkedCheckboxes.length / allCheckboxes.length) * 100);
+            
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            
+            const sections = document.querySelectorAll('.checklist');
+            let completedSections = 0;
+            sections.forEach(section => {
+                const checkboxes = section.querySelectorAll('input[type="checkbox"]');
+                const checked = section.querySelectorAll('input[type="checkbox"]:checked');
+                if (checkboxes.length > 0 && checkboxes.length === checked.length) {
+                    completedSections++;
+                }
+            });
+            
+            document.getElementById('completedSteps').textContent = completedSections;
+            document.getElementById('totalSteps').textContent = sections.length;
+            
+            sections.forEach(section => {
+                const sectionName = section.getAttribute('data-section');
+                const navItem = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+                const checkboxes = section.querySelectorAll('input[type="checkbox"]');
+                const checked = section.querySelectorAll('input[type="checkbox"]:checked');
+                
+                if (navItem) {
+                    navItem.classList.remove('completed', 'in-progress');
+                    if (checkboxes.length > 0 && checkboxes.length === checked.length) {
+                        navItem.classList.add('completed');
+                    } else if (checked.length > 0) {
+                        navItem.classList.add('in-progress');
+                    }
+                }
+            });
+            
+            allCheckboxes.forEach(cb => {
+                localStorage.setItem(cb.id, cb.checked);
+            });
+        }
+
+        function loadProgress() {
+            const allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            allCheckboxes.forEach(cb => {
+                const saved = localStorage.getItem(cb.id);
+                if (saved === 'true') {
+                    cb.checked = true;
+                    cb.parentElement.classList.add('completed');
+                }
+            });
+            updateProgress();
+        }
+
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', function() {
+                this.parentElement.classList.toggle('completed', this.checked);
+            });
+        });
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const target = document.querySelector(targetId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            const sections = document.querySelectorAll('section[id]');
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= (sectionTop - 100)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        window.addEventListener('load', loadProgress);
+    </script>
+</body>
+</html>

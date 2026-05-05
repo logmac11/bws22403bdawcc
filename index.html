@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Data Analytics with Cloud Computing | UTHM</title>
+    <style>
+        :root {
+            --primary: #006847; --primary-light: #00895c; --primary-dark: #004d35;
+            --accent: #ff9800; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --info: #2196f3;
+            --bg: #f5f7fa; --card: #ffffff; --text: #2c3e50; --text-light: #7f8c8d; --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f; --sidebar-hover: #2d4a3f; --code-bg: #2d3748; --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px; --transition: all 0.3s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.2rem; opacity: 0.9; margin-bottom: 1rem; }
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.4rem 1.2rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+        .badge-core { background: var(--success); color: white; }
+        .badge-optional { background: var(--warning); color: #333; }
+        .badge-selfstudy { background: var(--info); color: white; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .course-overview {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+        }
+
+        .pathways-banner {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 2px solid #90caf9;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .pathways-banner a {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: var(--transition);
+        }
+        .pathways-banner a:hover { background: var(--primary-light); }
+
+        .labs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .lab-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .lab-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+        .lab-card.core { border-left-color: var(--success); border-width: 5px; }
+        .lab-card.optional { border-left-color: var(--warning); }
+        .lab-card.selfstudy { border-left-color: var(--info); opacity: 0.9; }
+        
+        .lab-card h3 { color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .lab-card .lab-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .lab-card p { color: var(--text-light); font-size: 0.95rem; margin: 0.5rem 0; }
+        .lab-card .skills { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 0.4rem; 
+            margin: 0.75rem 0; 
+        }
+        .lab-card .skill-tag {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .lab-card .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: auto;
+            transition: var(--transition);
+            text-align: center;
+        }
+        .lab-card .btn:hover { background: var(--primary-light); }
+        .lab-card.selfstudy .btn { background: var(--info); }
+        .lab-card.selfstudy .btn:hover { background: #1976d2; }
+        
+        .lab-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .lab-badge.core { background: var(--success); color: white; }
+        .lab-badge.optional { background: var(--warning); color: #333; }
+        .lab-badge.selfstudy { background: var(--info); color: white; }
+
+        .progress-section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: var(--shadow);
+        }
+        .progress-bar {
+            height: 12px;
+            background: var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--accent));
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .labs-grid { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>📘 Big Data Analytics with Cloud Computing</h1>
+        <p class="subtitle">BSc Data Analytics • Universiti Tun Hussein Onn Malaysia (UTHM)</p>
+        <span class="badge">🔒 100% Free Tools • Zero Cost • Cloud-Native Curriculum</span>
+    </header>
+
+    <div class="container">
+        <!-- Course Overview -->
+        <section class="course-overview">
+            <h2>🎯 Course Focus: Analytics at Scale, in the Cloud</h2>
+            <p>This hands-on course prepares you for <strong>data analyst</strong> and <strong>analytics engineer</strong> roles by teaching you to query, transform, and analyze large datasets using MongoDB and PySpark — all deployed on cloud infrastructure.</p>
+            
+            <div class="pathways-banner">
+                <h3>🗺️ Choose Your Learning Path</h3>
+                <p><strong>Data Analyst Track:</strong> Complete the 6 <span class="badge badge-core">CORE</span> labs → Job-ready for analytics roles</p>
+                <p><strong>Advanced Track:</strong> Add optional labs → Prepares for data engineering roles</p>
+                <p><strong>Cloud Engineer Track:</strong> Complete all 10 labs → Full lifecycle expertise</p>
+                <a href="#pathways-handout" onclick="window.open('learning-pathways.html', '_blank'); return false;">📄 Download Learning Pathways Guide →</a>
+            </div>
+
+            <h3 style="margin: 1.5rem 0 0.75rem;">🛠️ Tech Stack (All Free)</h3>
+            <div class="skills">
+                <span class="skill-tag">MongoDB</span>
+                <span class="skill-tag">PySpark</span>
+                <span class="skill-tag">Google Colab</span>
+                <span class="skill-tag">Docker</span>
+                <span class="skill-tag">GitHub Actions</span>
+                <span class="skill-tag">MongoDB Atlas M0</span>
+            </div>
+        </section>
+
+        <!-- Progress Tracker -->
+        <section class="progress-section">
+            <h3>📊 Your Progress (Core Labs)</h3>
+            <div class="progress-bar"><div class="progress-fill" id="courseProgress" style="width: 0%"></div></div>
+            <p><span id="completedLabs">0</span> of 6 core labs completed</p>
+            <p style="font-size: 0.9rem; color: var(--text-light);">Focus on the 6 <span class="badge badge-core">CORE</span> labs first. Optional labs are available for advanced learners.</p>
+        </section>
+
+        <!-- Labs Grid -->
+        <h2 style="margin: 2rem 0 1rem;">📋 Lab Modules</h2>
+        <div class="labs-grid">
+            <!-- CORE LABS -->
+            <div class="lab-card core">
+                <span class="lab-badge core">CORE</span>
+                <h3><span class="lab-num">0</span> Installation & Setup</h3>
+                <p>Install Docker, MongoDB tools, and verify your environment. Foundation for all labs.</p>
+                <div class="skills">
+                    <span class="skill-tag">Docker</span>
+                    <span class="skill-tag">WSL</span>
+                    <span class="skill-tag">PATH</span>
+                </div>
+                <a href="lab0-setup.html" class="btn" onclick="markComplete(0)">Start Lab 0 →</a>
+            </div>
+
+            <div class="lab-card core">
+                <span class="lab-badge core">CORE</span>
+                <h3><span class="lab-num">1</span> CRUD & Document Modeling</h3>
+                <p>Insert, query, update, delete data in MongoDB. Learn flexible schema design for analytics.</p>
+                <div class="skills">
+                    <span class="skill-tag">mongosh</span>
+                    <span class="skill-tag">Compass</span>
+                    <span class="skill-tag">CRUD</span>
+                </div>
+                <a href="lab1-mongodb-crud.html" class="btn" onclick="markComplete(1)">Start Lab 1 →</a>
+            </div>
+
+            <div class="lab-card core">
+                <span class="lab-badge core">CORE</span>
+                <h3><span class="lab-num">2</span> Aggregation & Indexing</h3>
+                <p>Build multi-stage analytics pipelines. Optimize queries with indexes and explain plans.</p>
+                <div class="skills">
+                    <span class="skill-tag">$match</span>
+                    <span class="skill-tag">$group</span>
+                    <span class="skill-tag">Indexing</span>
+                </div>
+                <a href="lab2-aggregation-indexing.html" class="btn" onclick="markComplete(2)">Start Lab 2 →</a>
+            </div>
+
+            <div class="lab-card core">
+                <span class="lab-badge core">CORE</span>
+                <h3><span class="lab-num">4</span> PySpark + MongoDB Integration</h3>
+                <p>Connect Spark to MongoDB. Run distributed transformations on big data using DataFrames.</p>
+                <div class="skills">
+                    <span class="skill-tag">PySpark</span>
+                    <span class="skill-tag">DataFrames</span>
+                    <span class="skill-tag">Colab</span>
+                </div>
+                <a href="lab4-pyspark-mongodb.html" class="btn" onclick="markComplete(4)">Start Lab 4 →</a>
+            </div>
+
+            <div class="lab-card core">
+                <span class="lab-badge core">CORE</span>
+                <h3><span class="lab-num">5</span> PySpark SQL & UDFs</h3>
+                <p>Run SQL queries on Spark. Create custom functions and window analytics for business insights.</p>
+                <div class="skills">
+                    <span class="skill-tag">spark.sql()</span>
+                    <span class="skill-tag">UDFs</span>
+                    <span class="skill-tag">Windows</span>
+                </div>
+                <a href="lab5-pyspark-sql-udfs.html" class="btn" onclick="markComplete(5)">Start Lab 5 →</a>
+            </div>
+
+            <div class="lab-card core">
+                <span class="lab-badge core">CORE</span>
+                <h3><span class="lab-num">10</span> FinOps & Cost Optimization</h3>
+                <p>Master cloud cost management: right-sizing, spot instances, storage tiering for analytics workloads.</p>
+                <div class="skills">
+                    <span class="skill-tag">FinOps</span>
+                    <span class="skill-tag">Cost Analysis</span>
+                    <span class="skill-tag">Optimization</span>
+                </div>
+                <a href="lab10-finops-cost-optimization.html" class="btn" onclick="markComplete(10)">Start Lab 10 →</a>
+            </div>
+
+            <!-- OPTIONAL LABS -->
+            <div class="lab-card optional">
+                <span class="lab-badge optional">OPTIONAL</span>
+                <h3><span class="lab-num">3</span> Advanced Aggregation & Schema</h3>
+                <p>Use $lookup joins, $facet multi-analysis, and design schemas optimized for analytics queries.</p>
+                <div class="skills">
+                    <span class="skill-tag">$lookup</span>
+                    <span class="skill-tag">$facet</span>
+                    <span class="skill-tag">$merge</span>
+                </div>
+                <a href="lab3-advanced-aggregation-schema.html" class="btn" style="background: var(--warning); color: #333;" onclick="markComplete(3)">Explore Lab 3 →</a>
+            </div>
+
+            <div class="lab-card optional">
+                <span class="lab-badge optional">OPTIONAL</span>
+                <h3><span class="lab-num">6</span> Structured Streaming</h3>
+                <p>Process real-time data streams. Handle late data with watermarks for live dashboards.</p>
+                <div class="skills">
+                    <span class="skill-tag">Streaming</span>
+                    <span class="skill-tag">Watermarks</span>
+                    <span class="skill-tag">Micro-batches</span>
+                </div>
+                <a href="lab6-spark-streaming.html" class="btn" style="background: var(--warning); color: #333;" onclick="markComplete(6)">Explore Lab 6 →</a>
+            </div>
+
+            <div class="lab-card optional">
+                <span class="lab-badge optional">OPTIONAL</span>
+                <h3><span class="lab-num">8</span> CI/CD with GitHub Actions</h3>
+                <p>Automate testing and deployment of data pipelines with YAML workflows and secrets management.</p>
+                <div class="skills">
+                    <span class="skill-tag">GitHub Actions</span>
+                    <span class="skill-tag">YAML</span>
+                    <span class="skill-tag">Secrets</span>
+                </div>
+                <a href="lab8-cicd-github-actions.html" class="btn" style="background: var(--warning); color: #333;" onclick="markComplete(8)">Explore Lab 8 →</a>
+            </div>
+
+            <!-- SELF-STUDY LABS -->
+            <div class="lab-card selfstudy">
+                <span class="lab-badge selfstudy">SELF-STUDY</span>
+                <h3><span class="lab-num">7</span> IaC with Terraform</h3>
+                <p>Provision MongoDB Atlas clusters declaratively. Manage state and detect configuration drift.</p>
+                <div class="skills">
+                    <span class="skill-tag">Terraform</span>
+                    <span class="skill-tag">Atlas API</span>
+                    <span class="skill-tag">State</span>
+                </div>
+                <a href="lab7-terraform-atlas.html" class="btn" style="background: var(--info);" onclick="markComplete(7)">Self-Study Lab 7 →</a>
+            </div>
+
+            <div class="lab-card selfstudy">
+                <span class="lab-badge selfstudy">SELF-STUDY</span>
+                <h3><span class="lab-num">9</span> Kubernetes for Data Workloads</h3>
+                <p>Deploy, scale, and manage containerized data processors with Kubernetes pods, deployments, and jobs.</p>
+                <div class="skills">
+                    <span class="skill-tag">Kubernetes</span>
+                    <span class="skill-tag">Pods</span>
+                    <span class="skill-tag">Jobs</span>
+                </div>
+                <a href="lab9-kubernetes-data-workloads.html" class="btn" style="background: var(--info);" onclick="markComplete(9)">Self-Study Lab 9 →</a>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>📘 <strong>Big Data Analytics with Cloud Computing</strong></p>
+            <p>BSc Data Analytics | Universiti Tun Hussein Onn Malaysia (UTHM)</p>
+            <p style="margin-top: 0.5rem;">All course materials are 100% free and open source. No payment or credit card required.</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </div>
+
+    <script>
+        // Load saved progress (core labs only)
+        function loadCourseProgress() {
+            const coreLabs = [0, 1, 2, 4, 5, 10];
+            let completed = 0;
+            coreLabs.forEach(i => {
+                if (localStorage.getItem(`lab${i}_completed`) === 'true') {
+                    completed++;
+                }
+            });
+            const percent = Math.round((completed / 6) * 100);
+            document.getElementById('courseProgress').style.width = percent + '%';
+            document.getElementById('completedLabs').textContent = completed;
+        }
+
+        // Mark lab as complete
+        function markComplete(labNum) {
+            localStorage.setItem(`lab${labNum}_completed`, 'true');
+            loadCourseProgress();
+        }
+
+        // Initialize on load
+        window.addEventListener('load', loadCourseProgress);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 0: Installation & Setup Guide | Big Data Analytics</title>
+    <style>
+        :root {
+            --primary: #006847;
+            --primary-light: #00895c;
+            --primary-dark: #004d35;
+            --accent: #ff9800;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --info: #2196f3;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --text-light: #7f8c8d;
+            --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f;
+            --sidebar-hover: #2d4a3f;
+            --code-bg: #2d3748;
+            --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Left Sidebar */
+        .sidebar {
+            width: 320px;
+            background: var(--sidebar-bg);
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 2rem 1.5rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            color: #a0d4c7;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-header h3 {
+            font-size: 0.95rem;
+            color: white;
+        }
+
+        .progress-percent {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 1.3rem;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--accent));
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-steps {
+            font-size: 0.75rem;
+            color: #a0d4c7;
+            text-align: center;
+        }
+
+        /* Navigation */
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-section h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            color: #a0d4c7;
+            padding-left: 0.5rem;
+        }
+
+        .nav-list {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: var(--transition);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--sidebar-hover);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: var(--primary-light);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .nav-status {
+            margin-left: auto;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .nav-item.completed .nav-status {
+            background: var(--success);
+        }
+
+        .nav-item.in-progress .nav-status {
+            background: var(--accent);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 320px;
+            flex: 1;
+            padding: 2rem;
+            max-width: calc(100% - 320px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .card:hover { box-shadow: var(--shadow-lg); }
+
+        .card h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h3 {
+            color: var(--text);
+            font-size: 1.2rem;
+            margin: 1.5rem 0 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .step {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 0.75rem 0;
+            position: relative;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            white-space: pre;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover { background: rgba(255,255,255,0.3); }
+        .copy-btn.copied { background: var(--success); }
+
+        .checklist { list-style: none; }
+
+        .checklist li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .checklist li:last-child { border-bottom: none; }
+
+        .checklist input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .checklist label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid var(--success); }
+        .alert-warning { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .alert-info { background: #e3f2fd; border-left: 4px solid var(--info); }
+        .alert-danger { background: #ffebee; border-left: 4px solid var(--danger); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        .deliverable-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .deliverable-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .deliverable-item .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .accordion { margin: 1rem 0; }
+
+        .accordion-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            background: #f8fafc;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .accordion-header:hover { background: #eef2f7; }
+
+        .accordion-header::after {
+            content: '▼';
+            font-size: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.25rem;
+        }
+
+        .accordion-item.open .accordion-body {
+            max-height: 2000px;
+            padding: 1rem 1.25rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem;
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            body { flex-direction: column; }
+        }
+
+        [id] { scroll-margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>📘 LAB 0</h1>
+            <p class="subtitle">Installation & Setup Guide</p>
+        </div>
+
+        <!-- Progress Tracker -->
+        <div class="progress-section">
+            <div class="progress-header">
+                <h3>📊 Your Progress</h3>
+                <span class="progress-percent" id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-steps">
+                <span id="completedSteps">0</span> of <span id="totalSteps">9</span> sections completed
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav-section">
+            <h4>📋 Setup Steps</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="requirements">
+                    <a href="#requirements" class="nav-link">
+                        <span class="nav-icon">📋</span>
+                        <span>Requirements</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="docker">
+                    <a href="#docker" class="nav-link">
+                        <span class="nav-icon">🐳</span>
+                        <span>Docker Desktop</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="wsl">
+                    <a href="#wsl" class="nav-link">
+                        <span class="nav-icon">🔧</span>
+                        <span>WSL Fix</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="mongosh">
+                    <a href="#mongosh" class="nav-link">
+                        <span class="nav-icon">🐚</span>
+                        <span>MongoDB Shell</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="mongotools">
+                    <a href="#mongotools" class="nav-link">
+                        <span class="nav-icon">🛠️</span>
+                        <span>Database Tools</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="compass">
+                    <a href="#compass" class="nav-link">
+                        <span class="nav-icon">🖥️</span>
+                        <span>Compass GUI</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="atlas">
+                    <a href="#atlas" class="nav-link">
+                        <span class="nav-icon">☁️</span>
+                        <span>Atlas (Optional)</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="verify">
+                    <a href="#verify" class="nav-link">
+                        <span class="nav-icon">✅</span>
+                        <span>Verify Setup</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <h4>📤 Submission</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="deliverables">
+                    <a href="#deliverables" class="nav-link">
+                        <span class="nav-icon">📦</span>
+                        <span>Deliverables</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="troubleshoot">
+                    <a href="#troubleshoot" class="nav-link">
+                        <span class="nav-icon">🛠️</span>
+                        <span>Troubleshoot</span>
+                        <span class="nav-status"></span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="header">
+            <h1>📘 LAB 0: Installation & Setup Guide</h1>
+            <p class="subtitle">Big Data Analytics with Cloud Computing</p>
+            <p class="subtitle">BSc Data Analytics • Universiti Tun Hussein Onn Malaysia (UTHM)</p>
+            <span class="badge">🔒 100% Free & Open Source • Zero Cost</span>
+        </div>
+
+        <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>IMPORTANT:</strong> Complete this lab <strong>BEFORE</strong> Lab 1. All software is <strong>100% FREE</strong> — no credit card or payment required.</div>
+        </div>
+
+        <!-- Requirements Section -->
+        <section class="card" id="requirements">
+            <h2>📋 Step 0: System Requirements Check</h2>
+            <p>Before installing anything, verify your laptop meets the minimum requirements:</p>
+
+            <table>
+                <thead>
+                    <tr><th>Component</th><th>Minimum</th><th>Recommended</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>OS</td><td>Windows 10/11, macOS 12+, Ubuntu 20.04+</td><td>Same</td></tr>
+                    <tr><td>RAM</td><td>4 GB</td><td>8 GB</td></tr>
+                    <tr><td>Disk Space</td><td>10 GB free</td><td>20 GB free</td></tr>
+                    <tr><td>Internet</td><td>For initial downloads only</td><td>Stable connection</td></tr>
+                </tbody>
+            </table>
+
+            <ul class="checklist" data-section="requirements">
+                <li><input type="checkbox" id="req-1" onchange="updateProgress()"><label for="req-1">Checked RAM ≥ 4 GB</label></li>
+                <li><input type="checkbox" id="req-2" onchange="updateProgress()"><label for="req-2">Checked disk space ≥ 10 GB free</label></li>
+                <li><input type="checkbox" id="req-3" onchange="updateProgress()"><label for="req-3">Confirmed internet connection available</label></li>
+            </ul>
+        </section>
+
+        <!-- Docker Section -->
+        <section class="card" id="docker">
+            <h2>🐳 Step 1: Install Docker Desktop</h2>
+            <p>Docker lets us run MongoDB in isolated containers that work identically on every laptop.</p>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Download Docker Desktop</strong><br>
+                Go to: <a href="https://www.docker.com/products/docker-desktop/" target="_blank">https://www.docker.com/products/docker-desktop/</a><br>
+                Click <strong>"Download for Windows"</strong> (free for students/education)
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Run the Installer</strong><br>
+                - Double-click <code>Docker Desktop Installer.exe</code><br>
+                - ✅ Check <strong>"Use WSL 2 instead of Hyper-V"</strong><br>
+                - Click <strong>OK</strong> → Wait for installation to complete
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Restart Your Computer</strong><br>
+                The installer will prompt you to restart. <strong>Do not skip this step.</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Accept Subscription Agreement</strong><br>
+                After restart, open Docker Desktop. You'll see a subscription agreement popup.<br>
+                As a UTHM student, you qualify for <strong>FREE personal/educational use</strong>.<br>
+                Click <strong>"Accept"</strong> → Docker will load.
+            </div>
+
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Wait for "Engine running"</strong><br>
+                Docker Desktop will show a green dot with <strong>"Engine running"</strong> at the bottom.
+            </div>
+
+            <div class="code-block">
+<code>docker --version
+docker run hello-world</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <ul class="checklist" data-section="docker">
+                <li><input type="checkbox" id="dock-1" onchange="updateProgress()"><label for="dock-1">Docker Desktop installed</label></li>
+                <li><input type="checkbox" id="dock-2" onchange="updateProgress()"><label for="dock-2">Computer restarted</label></li>
+                <li><input type="checkbox" id="dock-3" onchange="updateProgress()"><label for="dock-3">Subscription agreement accepted</label></li>
+                <li><input type="checkbox" id="dock-4" onchange="updateProgress()"><label for="dock-4">Docker shows "Engine running"</label></li>
+                <li><input type="checkbox" id="dock-5" onchange="updateProgress()"><label for="dock-5"><code>docker run hello-world</code> works</label></li>
+            </ul>
+        </section>
+
+        <!-- WSL Section -->
+        <section class="card" id="wsl">
+            <h2>🔧 Step 2: Fix WSL (Windows Subsystem for Linux)</h2>
+            
+            <div class="alert alert-info">
+                <span class="alert-icon">ℹ️</span>
+                <div><strong>Note:</strong> This step is ONLY for Windows users who see the WSL update message in Docker. Skip if Docker started without errors.</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Open PowerShell as Administrator</strong><br>
+                Press <code>Windows Key</code> → Type <code>powershell</code> → Right-click → <strong>"Run as administrator"</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Update WSL</strong>
+            </div>
+            <div class="code-block">
+<code>wsl --update</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <p>Wait 2-5 minutes for the update to download and install.</p>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Shutdown WSL</strong>
+            </div>
+            <div class="code-block">
+<code>wsl --shutdown</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Complete WSL Setup (if prompted)</strong><br>
+                If you see <code>"Create a default Unix user account:"</code>:<br>
+                - Type a <strong>username</strong> (e.g., your name or "student") → Press Enter<br>
+                - Type a <strong>password</strong> (nothing shows as you type — this is normal) → Press Enter<br>
+                - Retype password → Press Enter
+            </div>
+
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Return to Docker Desktop</strong><br>
+                Click the blue <strong>"Try Again"</strong> button. Docker should now start successfully.
+            </div>
+
+            <ul class="checklist" data-section="wsl">
+                <li><input type="checkbox" id="wsl-1" onchange="updateProgress()"><label for="wsl-1">WSL updated (<code>wsl --update</code>)</label></li>
+                <li><input type="checkbox" id="wsl-2" onchange="updateProgress()"><label for="wsl-2">Unix user account created (if prompted)</label></li>
+                <li><input type="checkbox" id="wsl-3" onchange="updateProgress()"><label for="wsl-3">Docker Desktop shows "Engine running"</label></li>
+            </ul>
+        </section>
+
+        <!-- MongoDB Shell Section -->
+        <section class="card" id="mongosh">
+            <h2>🐚 Step 3: Install MongoDB Shell (mongosh)</h2>
+            <p>The MongoDB Shell is the command-line interface for interacting with MongoDB databases.</p>
+
+            <div class="alert alert-danger">
+                <span class="alert-icon">🚨</span>
+                <div><strong>IMPORTANT:</strong> <code>mongosh</code> is now a <strong>separate download</strong> from the database tools. You must install it separately.</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Download MongoDB Shell</strong><br>
+                Go to: <a href="https://www.mongodb.com/try/download/shell" target="_blank">https://www.mongodb.com/try/download/shell</a><br>
+                - Version: Latest stable<br>
+                - Platform: <strong>Windows</strong><br>
+                - Package: <strong>MSI</strong><br>
+                - Click <strong>"Download"</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Run the Installer</strong><br>
+                - Double-click the downloaded <code>.msi</code> file<br>
+                - Choose <strong>"Complete"</strong> installation<br>
+                - Click <strong>Next</strong> → <strong>Install</strong> → <strong>Finish</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Restart PowerShell</strong><br>
+                Close ALL PowerShell/CMD windows. Open a <strong>NEW</strong> PowerShell window.
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Verify Installation</strong>
+            </div>
+            <div class="code-block">
+<code>mongosh --version</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <p>You should see a version number like <code>2.8.2</code>. ✅</p>
+
+            <ul class="checklist" data-section="mongosh">
+                <li><input type="checkbox" id="ms-1" onchange="updateProgress()"><label for="ms-1">Downloaded MongoDB Shell MSI</label></li>
+                <li><input type="checkbox" id="ms-2" onchange="updateProgress()"><label for="ms-2">Installed with "Complete" option</label></li>
+                <li><input type="checkbox" id="ms-3" onchange="updateProgress()"><label for="ms-3"><code>mongosh --version</code> shows version number</label></li>
+            </ul>
+        </section>
+
+        <!-- MongoDB Database Tools Section -->
+        <section class="card" id="mongotools">
+            <h2>🛠️ Step 4: Install MongoDB Database Tools</h2>
+            <p>These tools include <code>mongoimport</code> and <code>mongoexport</code> for loading and saving data.</p>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Download Database Tools</strong><br>
+                Go to: <a href="https://www.mongodb.com/try/download/database-tools" target="_blank">https://www.mongodb.com/try/download/database-tools</a><br>
+                - Version: Latest (100.x.x)<br>
+                - Platform: <strong>Windows x86_64</strong><br>
+                - Package: <strong>MSI</strong><br>
+                - Click <strong>"Download"</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Run the Installer</strong><br>
+                - Double-click the downloaded <code>.msi</code> file<br>
+                - Choose <strong>"Complete"</strong> installation<br>
+                - Click <strong>Next</strong> → <strong>Install</strong> → <strong>Finish</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Restart Computer</strong><br>
+                ⚠️ <strong>Critical:</strong> Restart your computer so Windows recognizes the new tools.
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Verify Installation</strong><br>
+                Open a <strong>NEW</strong> PowerShell window and run:
+            </div>
+            <div class="code-block">
+<code>mongoimport --version
+mongoexport --version</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <p>You should see version numbers like <code>100.16.0</code>. ✅</p>
+
+            <div class="alert alert-warning">
+                <span class="alert-icon">⚠️</span>
+                <div>
+                    <strong>Still getting "not recognized" errors?</strong><br>
+                    1. Press <code>Windows Key</code> → Type "env" → "Edit the system environment variables"<br>
+                    2. Click "Environment Variables" → Under "User variables", select <code>Path</code> → Edit<br>
+                    3. Click "New" → Add: <code>C:\Program Files\MongoDB\Tools\100\bin</code><br>
+                    4. Click OK on all windows → Close ALL terminals → Open a NEW PowerShell
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="mongotools">
+                <li><input type="checkbox" id="mt-1" onchange="updateProgress()"><label for="mt-1">Downloaded Database Tools MSI</label></li>
+                <li><input type="checkbox" id="mt-2" onchange="updateProgress()"><label for="mt-2">Installed with "Complete" option</label></li>
+                <li><input type="checkbox" id="mt-3" onchange="updateProgress()"><label for="mt-3">Computer restarted</label></li>
+                <li><input type="checkbox" id="mt-4" onchange="updateProgress()"><label for="mt-4"><code>mongoimport --version</code> works</label></li>
+                <li><input type="checkbox" id="mt-5" onchange="updateProgress()"><label for="mt-5"><code>mongoexport --version</code> works</label></li>
+            </ul>
+        </section>
+
+        <!-- Compass Section -->
+        <section class="card" id="compass">
+            <h2>🖥️ Step 5: Install MongoDB Compass (GUI)</h2>
+            <p>Compass is a free visual tool to explore MongoDB data without writing commands.</p>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Download Compass</strong><br>
+                Go to: <a href="https://www.mongodb.com/products/compass" target="_blank">https://www.mongodb.com/products/compass</a><br>
+                Click <strong>"Download MongoDB Compass"</strong> (free version)
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Run the Installer</strong><br>
+                - Double-click the downloaded installer<br>
+                - Follow the prompts → <strong>Install</strong> → <strong>Finish</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Test Connection</strong><br>
+                1. Open MongoDB Compass<br>
+                2. In the connection field, paste:<br>
+            </div>
+            <div class="code-block">
+<code>mongodb://localhost:27017/</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="step">
+                <span class="step-number">4</span>
+                Click <strong>"Connect"</strong>. You should see <strong>"Connected to localhost"</strong>.<br>
+                <em>(No databases will appear yet — that's normal! MongoDB server starts in Lab 1.)</em>
+            </div>
+
+            <ul class="checklist" data-section="compass">
+                <li><input type="checkbox" id="comp-1" onchange="updateProgress()"><label for="comp-1">Compass downloaded and installed</label></li>
+                <li><input type="checkbox" id="comp-2" onchange="updateProgress()"><label for="comp-2">Compass launches successfully</label></li>
+                <li><input type="checkbox" id="comp-3" onchange="updateProgress()"><label for="comp-3">Connected to <code>mongodb://localhost:27017/</code></label></li>
+            </ul>
+        </section>
+
+        <!-- Atlas Section -->
+        <section class="card" id="atlas">
+            <h2>☁️ Step 6: Create MongoDB Atlas Account <span style="font-size: 0.8rem; background: #fff3e0; padding: 0.2rem 0.6rem; border-radius: 4px;">OPTIONAL</span></h2>
+            <p>Atlas is MongoDB's free cloud platform. This step is optional for Lab 0 but recommended for future labs.</p>
+
+            <div class="alert alert-info">
+                <span class="alert-icon">ℹ️</span>
+                <div><strong>Zero Cost:</strong> The M0 Sandbox tier is <strong>forever free</strong> with no credit card required.</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Sign Up</strong><br>
+                Go to: <a href="https://www.mongodb.com/cloud/atlas/register" target="_blank">https://www.mongodb.com/cloud/atlas/register</a><br>
+                Use your <strong>UTHM student email</strong> (@student.uthm.edu.my)
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Select Use Case</strong><br>
+                Choose: <strong>"Learn MongoDB / Personal Project"</strong><br>
+                This ensures you see the FREE tier options.
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Skip Payment Method</strong><br>
+                When prompted for credit card, look for <strong>"Continue with free tier"</strong> or <strong>"Skip for now"</strong>.<br>
+                ⚠️ <strong>Do NOT enter any payment details.</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Create FREE Cluster</strong><br>
+                - Project name: <code>UTHM-BigData-2026</code><br>
+                - Provider: <strong>AWS</strong><br>
+                - Region: <strong>ap-southeast-1</strong> (Singapore — lowest latency for Malaysia)<br>
+                - Cluster Tier: <strong>M0 Sandbox (FREE)</strong> ← ⚠️ SELECT THIS<br>
+                - Cluster name: <code>lab-cluster</code><br>
+                - Click <strong>"Create Cluster"</strong> (takes 5-10 minutes)
+            </div>
+
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Create Database User</strong><br>
+                - Username: <code>student_&lt;your_matric&gt;</code><br>
+                - Password: Create a strong one → <strong>Save it securely</strong><br>
+                - Click <strong>"Create User"</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-number">6</span>
+                <strong>Configure Network Access</strong><br>
+                - Click <strong>"Add IP Address"</strong><br>
+                - Select: <strong>"Allow access from anywhere"</strong> (0.0.0.0/0)<br>
+                - Click <strong>"Confirm"</strong>
+            </div>
+
+            <div class="alert alert-danger">
+                <span class="alert-icon">🔒</span>
+                <div><strong>Security Reminder:</strong> Never share your Atlas connection string or password publicly. Treat them like your student ID credentials.</div>
+            </div>
+
+            <ul class="checklist" data-section="atlas">
+                <li><input type="checkbox" id="atl-1" onchange="updateProgress()"><label for="atl-1">Atlas account created with student email</label></li>
+                <li><input type="checkbox" id="atl-2" onchange="updateProgress()"><label for="atl-2">M0 FREE cluster created in Singapore region</label></li>
+                <li><input type="checkbox" id="atl-3" onchange="updateProgress()"><label for="atl-3">Database user created</label></li>
+                <li><input type="checkbox" id="atl-4" onchange="updateProgress()"><label for="atl-4">Network access configured</label></li>
+                <li><input type="checkbox" id="atl-5" onchange="updateProgress()"><label for="atl-5">Connection string saved securely</label></li>
+            </ul>
+        </section>
+
+        <!-- Verify Section -->
+        <section class="card" id="verify">
+            <h2>✅ Step 7: Full Verification Test</h2>
+            <p>Run this complete script to confirm everything is working. Copy and paste the entire block below into PowerShell:</p>
+
+            <div class="code-block">
+<code>Write-Host "=== LAB 0 VERIFICATION TEST ===" -ForegroundColor Cyan
+
+Write-Host "`n1. Docker check:" -ForegroundColor Yellow
+docker --version
+docker run --rm hello-world > $null 2>&1
+if ($?) { Write-Host "✅ Docker can run containers" -ForegroundColor Green } 
+else { Write-Host "❌ Docker test failed" -ForegroundColor Red }
+
+Write-Host "`n2. MongoDB tools check:" -ForegroundColor Yellow
+mongosh --version > $null 2>&1
+if ($?) { Write-Host "✅ mongosh installed" -ForegroundColor Green } 
+else { Write-Host "❌ mongosh missing" -ForegroundColor Red }
+
+mongoimport --version > $null 2>&1
+if ($?) { Write-Host "✅ mongoimport installed" -ForegroundColor Green } 
+else { Write-Host "❌ mongoimport missing" -ForegroundColor Red }
+
+Write-Host "`n3. Compass check:" -ForegroundColor Yellow
+Write-Host "✅ Open Compass manually and confirm it launches" -ForegroundColor Green
+
+Write-Host "`n=== VERIFICATION COMPLETE ===" -ForegroundColor Cyan</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <p>✅ <strong>Expected Output:</strong> You should see green checkmarks (✅) for each installed tool.</p>
+
+            <ul class="checklist" data-section="verify">
+                <li><input type="checkbox" id="ver-1" onchange="updateProgress()"><label for="ver-1">Docker test passed</label></li>
+                <li><input type="checkbox" id="ver-2" onchange="updateProgress()"><label for="ver-2">mongosh test passed</label></li>
+                <li><input type="checkbox" id="ver-3" onchange="updateProgress()"><label for="ver-3">mongoimport test passed</label></li>
+                <li><input type="checkbox" id="ver-4" onchange="updateProgress()"><label for="ver-4">Compass launches successfully</label></li>
+            </ul>
+        </section>
+
+        <!-- Deliverables Section -->
+        <section class="card" id="deliverables">
+            <h2>📤 Submission: Lab 0 Deliverables</h2>
+            <p>Submit <strong>ALL</strong> deliverables as a single PDF named <code>LAB0_&lt;YourMatric&gt;.pdf</code></p>
+
+            <div class="deliverable-grid">
+                <div class="deliverable-item">
+                    <span class="num">1</span>
+                    <strong>System Specs</strong><br>
+                    <small>Screenshot showing RAM & disk space</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">2</span>
+                    <strong>Docker Version</strong><br>
+                    <small><code>docker --version</code> output</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">3</span>
+                    <strong>MongoDB Tools</strong><br>
+                    <small><code>mongosh --version</code> + <code>mongoimport --version</code> output</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">4</span>
+                    <strong>Compass Connected</strong><br>
+                    <small>Screenshot of Compass showing "Connected to localhost"</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">5</span>
+                    <strong>Verification Test</strong><br>
+                    <small>Screenshot of full verification script output</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">6</span>
+                    <strong>Atlas Setup</strong> <span style="background: #fff3e0; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem;">Optional</span><br>
+                    <small>Screenshot of Atlas cluster (blur password)</small>
+                </div>
+            </div>
+
+            <div class="alert alert-success">
+                <span class="alert-icon">📁</span>
+                <div>
+                    <strong>File Naming:</strong> <code>LAB0_AD200001.pdf</code> (replace with your matric number)<br>
+                    <strong>Submit to:</strong> UTHM LMS / Google Classroom<br>
+                    <strong>Deadline:</strong> Before Lab 1 session<br>
+                    <strong>Grading:</strong> ✅ Pass / ❌ Resubmit (binary checklist)
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="deliverables">
+                <li><input type="checkbox" id="del-1" onchange="updateProgress()"><label for="del-1">All required deliverables prepared</label></li>
+                <li><input type="checkbox" id="del-2" onchange="updateProgress()"><label for="del-2">PDF named correctly</label></li>
+                <li><input type="checkbox" id="del-3" onchange="updateProgress()"><label for="del-3">Ready for submission</label></li>
+            </ul>
+        </section>
+
+        <!-- Troubleshoot Section -->
+        <section class="card" id="troubleshoot">
+            <h2>🛠️ Troubleshooting Guide</h2>
+            <p>Common issues and their solutions:</p>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Port 27017 already in use"</div>
+                    <div class="accordion-body">
+                        <p>Another MongoDB instance is running locally.</p>
+                        <div class="code-block">
+                            <code># Stop local MongoDB:
+net stop MongoDB
+# Or quit MongoDB from system tray</code>
+                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "docker: command not found"</div>
+                    <div class="accordion-body">
+                        <p>Docker is not installed or not in your PATH.</p>
+                        <p><strong>Fix:</strong></p>
+                        <ol>
+                            <li>Install Docker Desktop from docker.com</li>
+                            <li>Restart your computer</li>
+                            <li>Open a NEW PowerShell window</li>
+                            <li>Verify: <code>docker --version</code></li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "mongosh: command not found"</div>
+                    <div class="accordion-body">
+                        <p>MongoDB Shell is not installed or not in PATH.</p>
+                        <p><strong>Fix:</strong></p>
+                        <ol>
+                            <li>Download from: <a href="https://www.mongodb.com/try/download/shell" target="_blank">mongodb.com/try/download/shell</a></li>
+                            <li>Install the MSI with "Complete" option</li>
+                            <li><strong>Restart computer</strong></li>
+                            <li>If still not found, add to PATH manually:<br>
+                                <code>C:\Program Files\MongoDB\Server\7.0\bin</code></li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ Docker shows "WSL needs updating"</div>
+                    <div class="accordion-body">
+                        <p>See <strong>Step 2: Fix WSL</strong> above. Run <code>wsl --update</code> in PowerShell (Admin).</p>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ Atlas asks for credit card</div>
+                    <div class="accordion-body">
+                        <p>You selected the wrong tier. Go back and:</p>
+                        <ol>
+                            <li>Choose "Learn MongoDB / Personal Project"</li>
+                            <li>Select <strong>"M0 Sandbox (FREE)"</strong></li>
+                            <li>Look for "Skip payment" or "Continue with free tier"</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ Compass crashes on startup</div>
+                    <div class="accordion-body">
+                        <p>Try these fixes:</p>
+                        <ol>
+                            <li>Update graphics drivers</li>
+                            <li>Run Compass as Administrator</li>
+                            <li>Use <code>mongosh</code> CLI instead (still 100% functional)</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <span class="alert-icon">🆘</span>
+                <div>
+                    <strong>Still stuck?</strong><br>
+                    1. Join the UTHM course Telegram/Discord channel<br>
+                    2. Email your instructor: <code>[instructor]@uthm.edu.my</code> with subject "LAB0 HELP - [Your Matric]"<br>
+                    3. Check official docs:<br>
+                    &nbsp;&nbsp;• Docker: <a href="https://docs.docker.com/get-docker/" target="_blank">docs.docker.com</a><br>
+                    &nbsp;&nbsp;• MongoDB: <a href="https://www.mongodb.com/docs/" target="_blank">mongodb.com/docs</a>
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="troubleshoot">
+                <li><input type="checkbox" id="ts-1" onchange="updateProgress()"><label for="ts-1">Reviewed troubleshooting section</label></li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>📘 <strong>LAB 0: Installation & Setup Guide</strong></p>
+            <p>Big Data Analytics with Cloud Computing | BSc Data Analytics | UTHM</p>
+            <p style="margin-top: 0.5rem;">All tools are 100% free and open source. No payment required.</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </main>
+
+    <script>
+        // Copy code to clipboard
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = '✅ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Toggle accordion
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+
+        // Update progress based on checked checkboxes
+        function updateProgress() {
+            const allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checkedCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percent = Math.round((checkedCheckboxes.length / allCheckboxes.length) * 100);
+            
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            
+            const sections = document.querySelectorAll('.checklist');
+            let completedSections = 0;
+            sections.forEach(section => {
+                const checkboxes = section.querySelectorAll('input[type="checkbox"]');
+                const checked = section.querySelectorAll('input[type="checkbox"]:checked');
+                if (checkboxes.length > 0 && checkboxes.length === checked.length) {
+                    completedSections++;
+                }
+            });
+            
+            document.getElementById('completedSteps').textContent = completedSections;
+            document.getElementById('totalSteps').textContent = sections.length;
+            
+            sections.forEach(section => {
+                const sectionName = section.getAttribute('data-section');
+                const navItem = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+                const checkboxes = section.querySelectorAll('input[type="checkbox"]');
+                const checked = section.querySelectorAll('input[type="checkbox"]:checked');
+                
+                if (navItem) {
+                    navItem.classList.remove('completed', 'in-progress');
+                    if (checkboxes.length > 0 && checkboxes.length === checked.length) {
+                        navItem.classList.add('completed');
+                    } else if (checked.length > 0) {
+                        navItem.classList.add('in-progress');
+                    }
+                }
+            });
+            
+            allCheckboxes.forEach(cb => {
+                localStorage.setItem(cb.id, cb.checked);
+            });
+        }
+
+        // Load saved progress
+        function loadProgress() {
+            const allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            allCheckboxes.forEach(cb => {
+                const saved = localStorage.getItem(cb.id);
+                if (saved === 'true') {
+                    cb.checked = true;
+                    cb.parentElement.classList.add('completed');
+                }
+            });
+            updateProgress();
+        }
+
+        // Listen for checkbox changes
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', function() {
+                this.parentElement.classList.toggle('completed', this.checked);
+            });
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const target = document.querySelector(targetId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Highlight active section on scroll
+        window.addEventListener('scroll', () => {
+            let current = '';
+            const sections = document.querySelectorAll('section[id]');
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= (sectionTop - 100)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Load progress on page load
+        window.addEventListener('load', loadProgress);
+    </script>
+</body>
+</html>

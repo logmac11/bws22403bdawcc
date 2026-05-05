@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 1: MongoDB CRUD & Document Modeling | Big Data Analytics</title>
+    <style>
+        :root {
+            --primary: #006847;
+            --primary-light: #00895c;
+            --primary-dark: #004d35;
+            --accent: #ff9800;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --info: #2196f3;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --text-light: #7f8c8d;
+            --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f;
+            --sidebar-hover: #2d4a3f;
+            --code-bg: #2d3748;
+            --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--sidebar-bg);
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 2rem 1.5rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h1 { font-size: 1.3rem; margin-bottom: 0.5rem; color: white; }
+        .sidebar-header .subtitle { font-size: 0.85rem; opacity: 0.9; color: #a0d4c7; }
+
+        .progress-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-header h3 { font-size: 0.95rem; color: white; }
+        .progress-percent { font-weight: 700; color: var(--accent); font-size: 1.3rem; }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--accent));
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-steps { font-size: 0.75rem; color: #a0d4c7; text-align: center; }
+
+        .nav-section { margin-bottom: 2rem; }
+        .nav-section h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            color: #a0d4c7;
+            padding-left: 0.5rem;
+        }
+
+        .nav-list { list-style: none; }
+        .nav-item { margin-bottom: 0.25rem; }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: var(--transition);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover, .nav-link.active { background: var(--sidebar-hover); color: white; }
+        .nav-link.active { background: var(--primary-light); font-weight: 600; }
+        .nav-icon { margin-right: 0.75rem; font-size: 1.1rem; }
+
+        .nav-status {
+            margin-left: auto;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .nav-item.completed .nav-status { background: var(--success); }
+        .nav-item.in-progress .nav-status { background: var(--accent); }
+
+        .main-content {
+            margin-left: 320px;
+            flex: 1;
+            padding: 2rem;
+            max-width: calc(100% - 320px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h3 { color: var(--text); font-size: 1.2rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+
+        .step {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 0.75rem 0;
+            position: relative;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover { background: rgba(255,255,255,0.3); }
+        .copy-btn.copied { background: var(--success); }
+
+        .code-explanation {
+            background: #fff9e6;
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            margin: 0.75rem 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .code-explanation strong { color: var(--primary-dark); display: block; margin-bottom: 0.5rem; }
+
+        .expected-output {
+            background: #e8f5e9;
+            border-left: 4px solid var(--success);
+            padding: 1rem;
+            margin: 0.75rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .expected-output strong { color: #2e7d32; display: block; margin-bottom: 0.5rem; }
+
+        .checklist { list-style: none; }
+        .checklist li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .checklist li:last-child { border-bottom: none; }
+        .checklist input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+        .checklist label { cursor: pointer; flex: 1; }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .alert-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid var(--success); }
+        .alert-warning { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .alert-info { background: #e3f2fd; border-left: 4px solid var(--info); }
+        .alert-danger { background: #ffebee; border-left: 4px solid var(--danger); }
+
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        .deliverable-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .deliverable-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .deliverable-item .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .accordion { margin: 1rem 0; }
+        .accordion-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            background: #f8fafc;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .accordion-header:hover { background: #eef2f7; }
+        .accordion-header::after { content: '▼'; font-size: 0.75rem; transition: transform 0.3s ease; }
+        .accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.25rem;
+        }
+
+        .accordion-item.open .accordion-body { max-height: 2000px; padding: 1rem 1.25rem; }
+
+        .tip-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .tip-box strong { color: #1565c0; display: block; margin-bottom: 0.5rem; }
+
+        .warning-box {
+            background: #fff3e0;
+            border: 1px solid #ffcc80;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .warning-box strong { color: #e65100; display: block; margin-bottom: 0.5rem; }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 100%; height: auto; position: relative; padding: 1rem; }
+            .main-content { margin-left: 0; max-width: 100%; }
+            body { flex-direction: column; }
+        }
+
+        [id] { scroll-margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>📘 LAB 1</h1>
+            <p class="subtitle">MongoDB CRUD & Document Modeling</p>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-header">
+                <h3>📊 Lab Progress</h3>
+                <span class="progress-percent" id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-steps">
+                <span id="completedSteps">0</span> of <span id="totalSteps">10</span> sections completed
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <h4>📋 Lab Steps</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="context">
+                    <a href="#context" class="nav-link"><span class="nav-icon">🏪</span><span>App Context</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="start">
+                    <a href="#start" class="nav-link"><span class="nav-icon">🐳</span><span>Start MongoDB</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="manage">
+                    <a href="#manage" class="nav-link"><span class="nav-icon">🔄</span><span>Manage Containers</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="connect">
+                    <a href="#connect" class="nav-link"><span class="nav-icon">🔌</span><span>Connect</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="crud">
+                    <a href="#crud" class="nav-link"><span class="nav-icon">📝</span><span>CRUD Operations</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="import">
+                    <a href="#import" class="nav-link"><span class="nav-icon">📥</span><span>Import Data</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="query">
+                    <a href="#query" class="nav-link"><span class="nav-icon">🔍</span><span>Query & Analyze</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="cloud">
+                    <a href="#cloud" class="nav-link"><span class="nav-icon">☁️</span><span>Cloud Bridge</span><span class="nav-status"></span></a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <h4>📤 Submission</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="deliverables">
+                    <a href="#deliverables" class="nav-link"><span class="nav-icon">📦</span><span>Deliverables</span><span class="nav-status"></span></a>
+                </li>
+                <li class="nav-item" data-section="troubleshoot">
+                    <a href="#troubleshoot" class="nav-link"><span class="nav-icon">🛠️</span><span>Troubleshoot</span><span class="nav-status"></span></a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>📘 LAB 1: MongoDB CRUD & Document Modeling</h1>
+            <p class="subtitle">Big Data Analytics with Cloud Computing</p>
+            <p class="subtitle">BSc Data Analytics • UTHM</p>
+            <span class="badge">🔒 100% Free • Local Docker → Free Cloud Bridge</span>
+        </div>
+
+        <div class="alert alert-info">
+            <span class="alert-icon">🎯</span>
+            <div><strong>Lab Focus:</strong> Hands-on MongoDB operations using a real-world example application. No written reports. Submit screenshots of working commands.</div>
+        </div>
+
+        <section class="card" id="context">
+            <h2>🏪 Example Application: CampusMart Analytics</h2>
+            <div class="alert alert-success">
+                <span class="alert-icon">📚</span>
+                <div><strong>Why This Matters:</strong> You're learning MongoDB through a realistic scenario that mirrors actual big data challenges in e-commerce platforms.</div>
+            </div>
+
+            <h3>📦 What is CampusMart?</h3>
+            <p><strong>CampusMart</strong> is a student-run marketplace platform where UTHM students buy/sell textbooks, electronics, and dorm essentials. As a Data Analytics student, you'll manage the <code>products</code> collection to support future analytics tasks like pricing trends, seller performance, and inventory optimization.</p>
+
+            <h3>🗂️ Document Structure Explained</h3>
+            <p>MongoDB stores data as flexible <strong>BSON documents</strong> (Binary JSON). Unlike SQL tables with fixed columns, each document can have different fields:</p>
+            
+            <div class="code-block">
+<code>{
+  "_id": ObjectId("67890abcdef1234567890"),
+  "name": "Calculus Early Transcendentals",
+  "category": "Textbooks",
+  "price": 45.00,
+  "currency": "MYR",
+  "seller": {
+    "name": "Ahmad",
+    "matric": "AD200001",
+    "rating": 4.8
+  },
+  "tags": ["mathematics", "semester1", "hardcover"],
+  "specs": {
+    "edition": "8th",
+    "year": 2022,
+    "pages": 1344
+  },
+  "inStock": true,
+  "listedDate": ISODate("2026-04-10T08:30:00Z")
+}</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 Key Concepts:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><strong>_id:</strong> Auto-generated unique identifier</li>
+                    <li><strong>Embedded Documents:</strong> <code>seller</code> and <code>specs</code> are nested objects (no SQL JOIN needed!)</li>
+                    <li><strong>Arrays:</strong> <code>tags</code> can hold multiple values</li>
+                    <li><strong>Flexible Schema:</strong> Different products can have different fields</li>
+                </ul>
+            </div>
+
+            <ul class="checklist" data-section="context">
+                <li><input type="checkbox" id="ctx-1" onchange="updateProgress()"><label for="ctx-1">Understood CampusMart use case</label></li>
+                <li><input type="checkbox" id="ctx-2" onchange="updateProgress()"><label for="ctx-2">Reviewed document structure & flexibility</label></li>
+                <li><input type="checkbox" id="ctx-3" onchange="updateProgress()"><label for="ctx-3">Identified embedded documents vs arrays</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="start">
+            <h2>🐳 Step 1: Start MongoDB Container</h2>
+            <div class="alert alert-warning">
+                <span class="alert-icon">⚠️</span>
+                <div><strong>Prerequisite:</strong> Ensure Docker Desktop is installed and running (green dot: "Engine running").</div>
+            </div>
+            <p>We'll run MongoDB locally using Docker. This mirrors how cloud platforms provision database instances.</p>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Open PowerShell or Terminal</strong><br>
+                Ensure Docker Desktop is running before proceeding.
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Run the MongoDB Container</strong>
+            </div>
+            
+            <div class="code-block">
+<code>docker run -d `
+  --name uthm-mongo-lab `
+  -p 27017:27017 `
+  -e MONGO_INITDB_ROOT_USERNAME=student `
+  -e MONGO_INITDB_ROOT_PASSWORD=uthm2026 `
+  --memory="1g" `
+  mongo:7.0</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔧 What Each Flag Does:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>-d</code> → Run in detached mode (background)</li>
+                    <li><code>--name uthm-mongo-lab</code> → Container identifier</li>
+                    <li><code>-p 27017:27017</code> → Map host port to container port</li>
+                    <li><code>-e MONGO_INITDB_ROOT_USERNAME/PASSWORD</code> → Set admin credentials</li>
+                    <li><code>--memory="1g"</code> → Limit RAM usage (protects slower laptops)</li>
+                    <li><code>mongo:7.0</code> → Use MongoDB version 7.0</li>
+                </ul>
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 Windows Single-Line Version (if backticks fail):</strong>
+                <div class="code-block" style="margin-top: 0.5rem;">
+<code>docker run -d --name uthm-mongo-lab -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=student -e MONGO_INITDB_ROOT_PASSWORD=uthm2026 --memory="1g" mongo:7.0</code>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Verify It's Running</strong>
+            </div>
+            
+            <div class="code-block">
+<code>docker ps</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ Expected Output:</strong>
+                <div class="code-block" style="margin-top: 0.5rem; background: #c8e6c9;">
+<code>CONTAINER ID   IMAGE       COMMAND                  STATUS         PORTS                      NAMES
+a1b2c3d4e5f6   mongo:7.0   "docker-entrypoint.s…"   Up 2 minutes   0.0.0.0:27017->27017/tcp   uthm-mongo-lab</code>
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="start">
+                <li><input type="checkbox" id="start-1" onchange="updateProgress()"><label for="start-1">Docker Desktop running</label></li>
+                <li><input type="checkbox" id="start-2" onchange="updateProgress()"><label for="start-2">Container started successfully</label></li>
+                <li><input type="checkbox" id="start-3" onchange="updateProgress()"><label for="start-3"><code>docker ps</code> shows container "Up"</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="manage">
+            <h2>🔄 Step 2: Container Management (Remove & Reuse)</h2>
+            <div class="alert alert-info">
+                <span class="alert-icon">📚</span>
+                <div><strong>Why This Matters:</strong> In real development, you'll frequently need to restart, stop, or recreate containers. Understanding container lifecycle management is essential for DevOps and cloud engineering.</div>
+            </div>
+
+            <h3>🔍 When to Reuse vs. Remove</h3>
+            <table>
+                <thead>
+                    <tr><th>Situation</th><th>Action</th><th>Command</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Container exists with correct config</td><td><strong>Reuse</strong> (just start it)</td><td><code>docker start uthm-mongo-lab</code></td></tr>
+                    <tr><td>Container stopped but config is good</td><td><strong>Restart</strong></td><td><code>docker restart uthm-mongo-lab</code></td></tr>
+                    <tr><td>Wrong password/config</td><td><strong>Remove & recreate</strong></td><td><code>docker rm -f uthm-mongo-lab</code> then <code>docker run...</code></td></tr>
+                    <tr><td>Need fresh database</td><td><strong>Remove & recreate</strong></td><td><code>docker rm -f uthm-mongo-lab</code> then <code>docker run...</code></td></tr>
+                </tbody>
+            </table>
+
+            <h4>📌 Task 1: Check Existing Containers</h4>
+            <div class="code-block">
+<code># See running containers
+docker ps
+
+# See ALL containers (including stopped)
+docker ps -a</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ What to Look For:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><strong>STATUS = "Up"</strong> → Container is running</li>
+                    <li><strong>STATUS = "Exited"</strong> → Container is stopped but exists</li>
+                    <li><strong>No output</strong> → No containers exist yet</li>
+                </ul>
+            </div>
+
+            <h4>📌 Task 2: Reuse an Existing Container</h4>
+            <p>If <code>docker ps -a</code> shows <code>uthm-mongo-lab</code>, you can reuse it:</p>
+
+            <div class="code-block">
+<code># Start a stopped container
+docker start uthm-mongo-lab
+
+# Or restart (stop then start)
+docker restart uthm-mongo-lab
+
+# Verify it's running
+docker ps</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="tip-box">
+                <strong>💡 Pro Tip:</strong> Reusing containers preserves your data! If you inserted documents in Lab 1, they'll still be there when you restart the container.
+            </div>
+
+            <h4>📌 Task 3: Remove and Recreate (When Needed)</h4>
+            <p>If you get <strong>"Error: container name already in use"</strong> or need to change the password:</p>
+
+            <div class="code-block">
+<code># Force remove container (even if running)
+docker rm -f uthm-mongo-lab
+
+# Verify it's gone
+docker ps -a
+
+# Now create fresh container
+docker run -d --name uthm-mongo-lab -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=student -e MONGO_INITDB_ROOT_PASSWORD=uthm2026 --memory="1g" mongo:7.0</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="alert alert-warning">
+                <span class="alert-icon">⚠️</span>
+                <div><strong>Warning:</strong> <code>docker rm -f</code> <strong>deletes all data</strong> in the container! Only use this when you need a fresh start or when configuration is wrong.</div>
+            </div>
+
+            <h4>📌 Task 4: Inspect Container Configuration</h4>
+            <p>To check what password/environment variables a container has:</p>
+
+            <div class="code-block">
+<code>docker inspect uthm-mongo-lab | findstr MONGO_INITDB</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ Expected Output:</strong>
+                <div class="code-block" style="margin-top: 0.5rem; background: #c8e6c9;">
+<code>"MONGO_INITDB_ROOT_USERNAME=student",
+"MONGO_INITDB_ROOT_PASSWORD=uthm2026",</code>
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="manage">
+                <li><input type="checkbox" id="mg-1" onchange="updateProgress()"><label for="mg-1">Checked existing containers with <code>docker ps -a</code></label></li>
+                <li><input type="checkbox" id="mg-2" onchange="updateProgress()"><label for="mg-2">Started/restarted existing container</label></li>
+                <li><input type="checkbox" id="mg-3" onchange="updateProgress()"><label for="mg-3">Understood when to remove vs. reuse</label></li>
+                <li><input type="checkbox" id="mg-4" onchange="updateProgress()"><label for="mg-4">Inspected container configuration</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="connect">
+            <h2>🔌 Step 3: Connect to MongoDB</h2>
+            <p>Connect using <code>mongosh</code> (CLI) or <code>Compass</code> (GUI). Both work identically for CRUD operations.</p>
+
+            <h3>🖥️ Option A: MongoDB Shell (mongosh)</h3>
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Open a NEW terminal window</strong> (keep Docker terminal open)
+            </div>
+            
+            <div class="code-block">
+<code>mongosh "mongodb://student:uthm2026@localhost:27017/admin"</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 Connection String Breakdown:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>mongodb://</code> → Protocol</li>
+                    <li><code>student:uthm2026</code> → Username:Password</li>
+                    <li><code>@localhost:27017</code> → Host & Port</li>
+                    <li><code>/admin</code> → Authentication database</li>
+                </ul>
+            </div>
+
+            <h3>🖼️ Option B: MongoDB Compass (GUI)</h3>
+            <div class="step">
+                <span class="step-number">1</span> Open Compass → Paste: <code>mongodb://student:uthm2026@localhost:27017/</code> → Click Connect
+            </div>
+
+            <div class="alert alert-info">
+                <span class="alert-icon">📂</span>
+                <div><strong>Create Lab Database:</strong><br>
+                In mongosh: <code>use campusmart</code><br>
+                In Compass: Click "+ Create Database" → Name: <code>campusmart</code> → Collection: <code>products</code></div>
+            </div>
+
+            <ul class="checklist" data-section="connect">
+                <li><input type="checkbox" id="conn-1" onchange="updateProgress()"><label for="conn-1">Connected via mongosh OR Compass</label></li>
+                <li><input type="checkbox" id="conn-2" onchange="updateProgress()"><label for="conn-2">Created <code>campusmart</code> database</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="crud">
+            <h2>📝 Step 4: CRUD Operations (Hands-On)</h2>
+            <p>Practice Create, Read, Update, Delete using realistic CampusMart data.</p>
+
+            <h4>✅ CREATE: Insert Products</h4>
+            <div class="code-block">
+<code>use campusmart
+
+db.products.insertOne({
+  name: "Python Crash Course",
+  category: "Textbooks",
+  price: 55.00,
+  currency: "MYR",
+  seller: { name: "Siti", matric: "AD200002", rating: 4.9 },
+  tags: ["programming", "python", "beginner"],
+  specs: { edition: "3rd", year: 2023, pages: 544 },
+  inStock: true,
+  listedDate: new Date("2026-04-15")
+})</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 Command Breakdown:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>db.products</code> → References the "products" collection</li>
+                    <li><code>insertOne({...})</code> → Inserts a single document</li>
+                    <li><code>seller: {...}</code> → Embedded document (nested object)</li>
+                    <li><code>new Date(...)</code> → Creates ISODate timestamp</li>
+                </ul>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ Expected:</strong> <code>{ acknowledged: true, insertedId: ObjectId("...") }</code>
+            </div>
+
+            <h4>📖 READ: Query Data</h4>
+            <div class="code-block">
+<code>db.products.find({ category: "Textbooks" })
+
+db.products.find(
+  { category: "Textbooks" },
+  { name: 1, price: 1, "seller.rating": 1, _id: 0 }
+)</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <h4>🔄 UPDATE: Modify Records</h4>
+            <div class="code-block">
+<code>db.products.updateOne(
+  { name: "Dorm Mini Fridge" },
+  { $set: { price: 220.00, inStock: true } }
+)
+
+db.products.updateOne(
+  { name: "Python Crash Course" },
+  { $addToSet: { tags: "data_science" } }
+)</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <h4>🗑️ DELETE: Remove Records</h4>
+            <div class="code-block">
+<code>db.products.deleteOne({ name: "Logitech MX Master 3S" })
+db.products.countDocuments()</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <ul class="checklist" data-section="crud">
+                <li><input type="checkbox" id="crud-1" onchange="updateProgress()"><label for="crud-1">Inserted products successfully</label></li>
+                <li><input type="checkbox" id="crud-2" onchange="updateProgress()"><label for="crud-2">Queried with filter & projection</label></li>
+                <li><input type="checkbox" id="crud-3" onchange="updateProgress()"><label for="crud-3">Updated price & added tag</label></li>
+                <li><input type="checkbox" id="crud-4" onchange="updateProgress()"><label for="crud-4">Deleted product & verified count</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="import">
+            <h2>📥 Step 5: Import Sample Dataset</h2>
+            <div class="alert alert-info">
+                <span class="alert-icon">📊</span>
+                <div><strong>Why Import?</strong> Real analytics work with larger datasets. Bulk imports simulate real-world data ingestion pipelines.</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Create <code>campusmart_products.json</code></strong><br>
+                Save this file in your lab folder:
+            </div>
+            
+            <div class="code-block">
+<code>[
+  {
+    "name": "Calculus Vol 1",
+    "category": "Textbooks",
+    "price": 48.00,
+    "seller": { "name": "Ahmad", "rating": 4.8 },
+    "tags": ["math", "semester1"],
+    "inStock": true
+  },
+  {
+    "name": "Statistics for Data Science",
+    "category": "Textbooks",
+    "price": 65.00,
+    "seller": { "name": "Siti", "rating": 4.9 },
+    "tags": ["stats", "python"],
+    "inStock": true
+  },
+  {
+    "name": "Mechanical Keyboard",
+    "category": "Electronics",
+    "price": 180.00,
+    "seller": { "name": "Raju", "rating": 4.6 },
+    "tags": ["keyboard", "gaming"],
+    "inStock": true
+  },
+  {
+    "name": "USB-C Hub",
+    "category": "Electronics",
+    "price": 85.00,
+    "seller": { "name": "Mei Ling", "rating": 4.5 },
+    "tags": ["accessories", "laptop"],
+    "inStock": false
+  },
+  {
+    "name": "Electric Kettle",
+    "category": "Appliances",
+    "price": 45.00,
+    "seller": { "name": "Ali", "rating": 4.7 },
+    "tags": ["dorm", "kitchen"],
+    "inStock": true
+  },
+  {
+    "name": "Linear Algebra Guide",
+    "category": "Textbooks",
+    "price": 52.00,
+    "seller": { "name": "Nurul", "rating": 4.8 },
+    "tags": ["math", "semester2"],
+    "inStock": true
+  },
+  {
+    "name": "Webcam HD 1080p",
+    "category": "Electronics",
+    "price": 120.00,
+    "seller": { "name": "Siti", "rating": 4.9 },
+    "tags": ["camera", "online-class"],
+    "inStock": true
+  }
+]</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Import using mongoimport</strong> (Run in terminal, NOT mongosh)
+            </div>
+            <div class="code-block">
+<code>mongoimport --uri "mongodb://student:uthm2026@localhost:27017/campusmart" `
+  --collection products `
+  --file campusmart_products.json `
+  --jsonArray</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="code-explanation">
+                <strong>🔍 Command Breakdown:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>--uri</code> → Connection string to MongoDB</li>
+                    <li><code>--collection products</code> → Target collection</li>
+                    <li><code>--file</code> → Path to JSON file</li>
+                    <li><code>--jsonArray</code> → File contains array of documents</li>
+                </ul>
+            </div>
+
+            <div class="expected-output">
+                <strong>✅ Expected:</strong> <code>7 document(s) imported successfully. 0 document(s) failed to import.</code>
+            </div>
+
+            <ul class="checklist" data-section="import">
+                <li><input type="checkbox" id="imp-1" onchange="updateProgress()"><label for="imp-1">JSON file created</label></li>
+                <li><input type="checkbox" id="imp-2" onchange="updateProgress()"><label for="imp-2">Successfully imported 7 documents</label></li>
+                <li><input type="checkbox" id="imp-3" onchange="updateProgress()"><label for="imp-3">Verified count & sample output</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="query">
+            <h2>🔍 Step 6: Query & Analyze</h2>
+            <p>Practice queries that simulate real analytics tasks.</p>
+
+            <h4>📊 Task 1: Filter & Sort</h4>
+            <p>Find all in-stock textbooks under RM 60, sorted by price:</p>
+            <div class="code-block">
+<code>db.products.find(
+  { category: "Textbooks", inStock: true, price: { $lt: 60 } },
+  { name: 1, price: 1, _id: 0 }
+).sort({ price: 1 })</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <h4>📈 Task 2: Array Matching</h4>
+            <p>Find products tagged with "dorm" OR "math":</p>
+            <div class="code-block">
+<code>db.products.find(
+  { tags: { $in: ["dorm", "math"] } },
+  { name: 1, tags: 1, _id: 0 }
+)</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <h4>👤 Task 3: Nested Document Query</h4>
+            <p>Find products sold by sellers with rating ≥ 4.8:</p>
+            <div class="code-block">
+<code>db.products.find(
+  { "seller.rating": { $gte: 4.8 } },
+  { name: 1, "seller.name": 1, "seller.rating": 1, _id: 0 }
+)</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+
+            <div class="alert alert-success">
+                <span class="alert-icon">🎯</span>
+                <div><strong>Analytics Bridge:</strong> These query patterns form the foundation for Week 2's Aggregation Pipeline ($match, $group, $sort) and Week 6's PySpark integration.</div>
+            </div>
+
+            <ul class="checklist" data-section="query">
+                <li><input type="checkbox" id="q-1" onchange="updateProgress()"><label for="q-1">Task 1: Filter & sort completed</label></li>
+                <li><input type="checkbox" id="q-2" onchange="updateProgress()"><label for="q-2">Task 2: Array matching completed</label></li>
+                <li><input type="checkbox" id="q-3" onchange="updateProgress()"><label for="q-3">Task 3: Nested query completed</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="cloud">
+            <h2>☁️ Step 7: Cloud Computing Bridge</h2>
+            <p>Understand how today's local commands map to free cloud platforms.</p>
+
+            <table>
+                <thead>
+                    <tr><th>Local Command</th><th>Free Cloud Equivalent (MongoDB Atlas M0)</th><th>Cloud Concept Learned</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>docker run mongo:7.0</code></td><td>Atlas UI → "Build Cluster" → M0 Free</td><td>Managed service provisioning</td></tr>
+                    <tr><td><code>localhost:27017</code></td><td><code>mongodb+srv://...mongodb.net</code></td><td>Cloud endpoint & DNS routing</td></tr>
+                    <tr><td><code>mongoimport --file</code></td><td>Atlas Data Import UI or CLI with Atlas URI</td><td>Cloud data ingestion</td></tr>
+                    <tr><td>Local <code>campusmart</code> DB</td><td>Atlas Database <code>campusmart</code></td><td>Multi-tenant cloud isolation</td></tr>
+                    <tr><td>Docker container</td><td>Atlas cluster nodes (AWS/GCP/Azure)</td><td>Infrastructure abstraction</td></tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-info">
+                <span class="alert-icon">🔑</span>
+                <div><strong>Key Takeaway:</strong> You're learning <strong>one skill</strong> (MongoDB operations) that works identically on local Docker AND free cloud Atlas. Industry teams develop locally, deploy to cloud.</div>
+            </div>
+
+            <ul class="checklist" data-section="cloud">
+                <li><input type="checkbox" id="cloud-1" onchange="updateProgress()"><label for="cloud-1">Understood local → cloud mapping</label></li>
+                <li><input type="checkbox" id="cloud-2" onchange="updateProgress()"><label for="cloud-2">Recognized managed service benefits</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="deliverables">
+            <h2>📤 Submission: Lab 1 Deliverables</h2>
+            <p>Submit <strong>ALL 6 deliverables</strong> as a single PDF named <code>LAB1_&lt;YourMatric&gt;.pdf</code></p>
+
+            <div class="deliverable-grid">
+                <div class="deliverable-item">
+                    <span class="num">1</span>
+                    <strong>Container Running</strong><br>
+                    <small><code>docker ps</code> showing <code>uthm-mongo-lab</code> Up</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">2</span>
+                    <strong>Connection Proof</strong><br>
+                    <small>Compass connected OR <code>mongosh</code> prompt showing <code>campusmart></code></small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">3</span>
+                    <strong>CRUD Operations</strong><br>
+                    <small>Screenshot of insert/update/delete outputs</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">4</span>
+                    <strong>Data Import</strong><br>
+                    <small><code>mongoimport</code> success message + <code>countDocuments()</code></small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">5</span>
+                    <strong>Analytics Queries</strong><br>
+                    <small>Outputs for Task 1, 2, and 3</small>
+                </div>
+                <div class="deliverable-item">
+                    <span class="num">6</span>
+                    <strong>Cloud Reflection</strong><br>
+                    <small>1-sentence: "One advantage of running this on Atlas vs local"</small>
+                </div>
+            </div>
+
+            <div class="alert alert-success">
+                <span class="alert-icon">📁</span>
+                <div>
+                    <strong>File Naming:</strong> <code>LAB1_AD200001.pdf</code><br>
+                    <strong>Submit to:</strong> UTHM LMS / Google Classroom<br>
+                    <strong>Deadline:</strong> End of lab session<br>
+                    <strong>Grading:</strong> ✅ Complete / ❌ Incomplete (>4 deliverables = full credit)
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="deliverables">
+                <li><input type="checkbox" id="del-1" onchange="updateProgress()"><label for="del-1">All 6 deliverables prepared</label></li>
+                <li><input type="checkbox" id="del-2" onchange="updateProgress()"><label for="del-2">PDF named correctly</label></li>
+                <li><input type="checkbox" id="del-3" onchange="updateProgress()"><label for="del-3">Ready for submission</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="troubleshoot">
+            <h2>🛠️ Troubleshooting & Tips</h2>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Port 27017 already in use"</div>
+                    <div class="accordion-body">
+                        <p>Another MongoDB instance is running. Stop it:</p>
+                        <div class="code-block">
+                            <code># Windows:
+net stop MongoDB
+# macOS:
+brew services stop mongodb-community
+# Linux:
+sudo systemctl stop mongod</code>
+                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Connection refused" in mongosh/Compass</div>
+                    <div class="accordion-body">
+                        <p>Container isn't running. Check with <code>docker ps</code>. If missing, restart with the <code>docker run</code> command from Step 1.</p>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ mongoimport: command not found</div>
+                    <div class="accordion-body">
+                        <p>See Lab 0 Step 4. Add MongoDB Tools to PATH or use Compass GUI import: Collections → "+" → Import File → JSON.</p>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">💡 How to stop/clean up after lab?</div>
+                    <div class="accordion-body">
+                        <div class="code-block">
+                            <code># Stop container
+docker stop uthm-mongo-lab
+
+# Start again later
+docker start uthm-mongo-lab
+
+# Complete reset (deletes all data)
+docker rm -f uthm-mongo-lab</code>
+                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="checklist" data-section="troubleshoot">
+                <li><input type="checkbox" id="ts-1" onchange="updateProgress()"><label for="ts-1">Reviewed troubleshooting section</label></li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>📘 <strong>LAB 1: MongoDB CRUD & Document Modeling</strong></p>
+            <p>Big Data Analytics with Cloud Computing | BSc Data Analytics | UTHM</p>
+            <p style="margin-top: 0.5rem;">All tools are 100% free. Skills transfer directly to MongoDB Atlas M0 (free cloud tier).</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </main>
+
+    <script>
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = '✅ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+
+        function updateProgress() {
+            const allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checkedCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percent = Math.round((checkedCheckboxes.length / allCheckboxes.length) * 100);
+            
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            
+            const sections = document.querySelectorAll('.checklist');
+            let completedSections = 0;
+            sections.forEach(section => {
+                const checkboxes = section.querySelectorAll('input[type="checkbox"]');
+                const checked = section.querySelectorAll('input[type="checkbox"]:checked');
+                if (checkboxes.length > 0 && checkboxes.length === checked.length) {
+                    completedSections++;
+                }
+            });
+            
+            document.getElementById('completedSteps').textContent = completedSections;
+            document.getElementById('totalSteps').textContent = sections.length;
+            
+            sections.forEach(section => {
+                const sectionName = section.getAttribute('data-section');
+                const navItem = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+                const checkboxes = section.querySelectorAll('input[type="checkbox"]');
+                const checked = section.querySelectorAll('input[type="checkbox"]:checked');
+                
+                if (navItem) {
+                    navItem.classList.remove('completed', 'in-progress');
+                    if (checkboxes.length > 0 && checkboxes.length === checked.length) {
+                        navItem.classList.add('completed');
+                    } else if (checked.length > 0) {
+                        navItem.classList.add('in-progress');
+                    }
+                }
+            });
+            
+            allCheckboxes.forEach(cb => {
+                localStorage.setItem(cb.id, cb.checked);
+            });
+        }
+
+        function loadProgress() {
+            const allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            allCheckboxes.forEach(cb => {
+                const saved = localStorage.getItem(cb.id);
+                if (saved === 'true') {
+                    cb.checked = true;
+                    cb.parentElement.classList.add('completed');
+                }
+            });
+            updateProgress();
+        }
+
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', function() {
+                this.parentElement.classList.toggle('completed', this.checked);
+            });
+        });
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const target = document.querySelector(targetId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            const sections = document.querySelectorAll('section[id]');
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= (sectionTop - 100)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        window.addEventListener('load', loadProgress);
+    </script>
+</body>
+</html>

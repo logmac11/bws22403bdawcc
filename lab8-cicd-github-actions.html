@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB 8: CI/CD for Data Pipelines | Big Data Analytics</title>
+    <style>
+        :root {
+            --primary: #006847; --primary-light: #00895c; --primary-dark: #004d35;
+            --accent: #ff9800; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --info: #2196f3;
+            --bg: #f5f7fa; --card: #ffffff; --text: #2c3e50; --text-light: #7f8c8d; --border: #e0e6ed;
+            --sidebar-bg: #1e3a2f; --sidebar-hover: #2d4a3f; --code-bg: #2d3748; --code-text: #e2e8f0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+            --radius: 12px; --transition: all 0.3s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; display: flex; min-height: 100vh; }
+        .sidebar { width: 320px; background: var(--sidebar-bg); color: white; position: fixed; left: 0; top: 0; height: 100vh; overflow-y: auto; padding: 2rem 1.5rem; box-shadow: var(--shadow-lg); z-index: 1000; }
+        .sidebar-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .sidebar-header h1 { font-size: 1.3rem; margin-bottom: 0.5rem; color: white; }
+        .sidebar-header .subtitle { font-size: 0.85rem; opacity: 0.9; color: #a0d4c7; }
+        .progress-section { background: rgba(255,255,255,0.1); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 2rem; }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .progress-header h3 { font-size: 0.95rem; color: white; }
+        .progress-percent { font-weight: 700; color: var(--accent); font-size: 1.3rem; }
+        .progress-bar { height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--accent)); border-radius: 5px; transition: width 0.5s ease; width: 0%; }
+        .progress-steps { font-size: 0.75rem; color: #a0d4c7; text-align: center; }
+        .nav-section { margin-bottom: 2rem; }
+        .nav-section h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; color: #a0d4c7; padding-left: 0.5rem; }
+        .nav-list { list-style: none; }
+        .nav-item { margin-bottom: 0.25rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: white; text-decoration: none; border-radius: 8px; transition: var(--transition); cursor: pointer; font-size: 0.9rem; }
+        .nav-link:hover, .nav-link.active { background: var(--sidebar-hover); color: white; }
+        .nav-link.active { background: var(--primary-light); font-weight: 600; }
+        .nav-icon { margin-right: 0.75rem; font-size: 1.1rem; }
+        .nav-status { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+        .nav-item.completed .nav-status { background: var(--success); }
+        .nav-item.in-progress .nav-status { background: var(--accent); }
+        .main-content { margin-left: 320px; flex: 1; padding: 2rem; max-width: calc(100% - 320px); }
+        .header { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%); color: white; padding: 2rem; border-radius: var(--radius); margin-bottom: 2rem; box-shadow: var(--shadow-lg); }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.85rem; margin-top: 0.5rem; backdrop-filter: blur(10px); }
+        .card { background: var(--card); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border-left: 4px solid var(--primary); transition: var(--transition); }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h3 { color: var(--text); font-size: 1.2rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+        .step { background: #f8fafc; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; border: 1px solid var(--border); border-left: 4px solid var(--accent); }
+        .step-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; font-size: 0.85rem; font-weight: 700; margin-right: 0.5rem; }
+        .code-block { background: var(--code-bg); color: var(--code-text); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; position: relative; overflow-x: auto; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; }
+        .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.15); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: var(--transition); }
+        .copy-btn:hover { background: rgba(255,255,255,0.3); }
+        .copy-btn.copied { background: var(--success); }
+        .code-explanation { background: #fff9e6; border-left: 4px solid var(--accent); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+        .code-explanation strong { color: var(--primary-dark); display: block; margin-bottom: 0.5rem; }
+        .expected-output { background: #e8f5e9; border-left: 4px solid var(--success); padding: 1rem; margin: 0.75rem 0; border-radius: 0 8px 8px 0; }
+        .expected-output strong { color: #2e7d32; display: block; margin-bottom: 0.5rem; }
+        .checklist { list-style: none; }
+        .checklist li { padding: 0.75rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; }
+        .checklist li:last-child { border-bottom: none; }
+        .checklist input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+        .checklist label { cursor: pointer; flex: 1; }
+        .alert { padding: 1rem 1.25rem; border-radius: 8px; margin: 1rem 0; display: flex; align-items: flex-start; gap: 0.75rem; }
+        .alert-icon { font-size: 1.25rem; flex-shrink: 0; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid var(--success); }
+        .alert-warning { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .alert-info { background: #e3f2fd; border-left: 4px solid var(--info); }
+        .alert-danger { background: #ffebee; border-left: 4px solid var(--danger); }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--primary); color: white; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+        .deliverable-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .deliverable-item { background: white; border-radius: 8px; padding: 1rem; border: 1px solid var(--border); }
+        .deliverable-item .num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 50%; font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem; }
+        .accordion { margin: 1rem 0; }
+        .accordion-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
+        .accordion-header { background: #f8fafc; padding: 1rem 1.25rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; transition: var(--transition); user-select: none; }
+        .accordion-header:hover { background: #eef2f7; }
+        .accordion-header::after { content: '▼'; font-size: 0.75rem; transition: transform 0.3s ease; }
+        .accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+        .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 1.25rem; }
+        .accordion-item.open .accordion-body { max-height: 2000px; padding: 1rem 1.25rem; }
+        .tip-box { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .tip-box strong { color: #1565c0; display: block; margin-bottom: 0.5rem; }
+        .footer { text-align: center; padding: 2rem; color: var(--text-light); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+        @media (max-width: 1024px) { .sidebar { width: 100%; height: auto; position: relative; padding: 1rem; } .main-content { margin-left: 0; max-width: 100%; } body { flex-direction: column; } }
+        [id] { scroll-margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header"><h1>📘 LAB 8</h1><p class="subtitle">CI/CD with GitHub Actions</p></div>
+        <div class="progress-section">
+            <div class="progress-header"><h3>📊 Lab Progress</h3><span class="progress-percent" id="progressPercent">0%</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-steps"><span id="completedSteps">0</span> of <span id="totalSteps">7</span> sections completed</div>
+        </div>
+        <nav class="nav-section">
+            <h4>📋 Lab Steps</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="setup"><a href="#setup" class="nav-link"><span class="nav-icon"></span><span>Repo & Actions Setup</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="workflow"><a href="#workflow" class="nav-link"><span class="nav-icon">📝</span><span>Write Workflow YAML</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="test"><a href="#test" class="nav-link"><span class="nav-icon">🧪</span><span>Lint & Test Stages</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="secrets"><a href="#secrets" class="nav-link"><span class="nav-icon">🔑</span><span>Secrets & Security</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="trigger"><a href="#trigger" class="nav-link"><span class="nav-icon">⚡</span><span>Manual Triggers</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="cloud"><a href="#cloud" class="nav-link"><span class="nav-icon">☁️</span><span>Cloud Bridge</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+        <nav class="nav-section">
+            <h4>📤 Submission</h4>
+            <ul class="nav-list">
+                <li class="nav-item" data-section="deliverables"><a href="#deliverables" class="nav-link"><span class="nav-icon">📦</span><span>Deliverables</span><span class="nav-status"></span></a></li>
+                <li class="nav-item" data-section="troubleshoot"><a href="#troubleshoot" class="nav-link"><span class="nav-icon">🛠️</span><span>Troubleshoot</span><span class="nav-status"></span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>📘 LAB 8: CI/CD Automation for Data Pipelines with GitHub Actions</h1>
+            <p class="subtitle">Big Data Analytics with Cloud Computing</p>
+            <p class="subtitle">BSc Data Analytics • UTHM</p>
+            <span class="badge">🔒 100% Free • Automated Testing, YAML Workflows & GitOps Pipelines</span>
+        </div>
+        <div class="alert alert-info">
+            <span class="alert-icon">🎯</span>
+            <div><strong>Lab Focus:</strong> Build a reproducible data pipeline workflow triggered by git commits. Automate linting, unit tests, and simulated deployment. Learn secrets management, workflow dispatch, and audit logging. Submit workflow run screenshots & YAML files.</div>
+        </div>
+
+        <section class="card" id="setup">
+            <h2>📦 Step 1: Repository & Actions Setup</h2>
+            <div class="step"><span class="step-number">1</span><strong>Create GitHub Repository</strong></div>
+            <p>Go to GitHub → New Repository → Name: <code>uthm-data-pipeline-lab8</code> → Public → Create.</p>
+            <div class="step"><span class="step-number">2</span><strong>Clone & Prepare Structure</strong></div>
+            <div class="code-block">
+<code>git clone https://github.com/YOUR_USERNAME/uthm-data-pipeline-lab8.git
+cd uthm-data-pipeline-lab8
+
+# Create pipeline script
+mkdir -p scripts
+cat > scripts/etl_pipeline.py << 'EOF'
+import pandas as pd
+import sys
+
+def load_data():
+    print("📥 Loading CampusMart data...")
+    return pd.DataFrame({"category": ["Textbooks", "Electronics"], "price": [55.0, 180.0]})
+
+def validate(df):
+    if df.empty:
+        print("❌ Validation failed: Empty dataset")
+        sys.exit(1)
+    print(f"✅ Validation passed: {len(df)} rows")
+
+def transform(df):
+    df["price_tier"] = df["price"].apply(lambda x: "High" if x > 100 else "Low")
+    return df
+
+if __name__ == "__main__":
+    df = load_data()
+    validate(df)
+    df = transform(df)
+    print(df)
+EOF
+
+# Add test file
+cat > tests/test_pipeline.py << 'EOF'
+import unittest
+import pandas as pd
+import sys
+sys.path.append("../scripts")
+from etl_pipeline import validate, transform
+
+class TestPipeline(unittest.TestCase):
+    def test_validate_empty(self):
+        with self.assertRaises(SystemExit):
+            validate(pd.DataFrame())
+    
+    def test_transform_tier(self):
+        df = pd.DataFrame({"price": [50.0, 150.0]})
+        result = transform(df)
+        self.assertEqual(result.iloc[0]["price_tier"], "Low")
+        self.assertEqual(result.iloc[1]["price_tier"], "High")
+
+if __name__ == "__main__":
+    unittest.main()
+EOF
+
+mkdir -p tests</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <ul class="checklist" data-section="setup">
+                <li><input type="checkbox" id="set-1" onchange="updateProgress()"><label for="set-1">GitHub repo created & cloned</label></li>
+                <li><input type="checkbox" id="set-2" onchange="updateProgress()"><label for="set-2">Pipeline script & test file added</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="workflow">
+            <h2>📝 Step 2: Write GitHub Actions Workflow</h2>
+            <p>Workflows are YAML files in <code>.github/workflows/</code> that define triggers, jobs, and steps.</p>
+            <div class="code-block">
+<code>mkdir -p .github/workflows
+cat > .github/workflows/data-pipeline.yml << 'EOF'
+name: CampusMart Data Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas flake8 pytest
+
+      - name: Lint with flake8
+        run: flake8 scripts/ --count --show-source --statistics
+
+      - name: Run tests
+        run: pytest tests/ -v
+
+  simulate-deploy:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Simulate Deployment
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "✅ Pipeline executed successfully"
+EOF</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="code-explanation">
+                <strong>🔍 YAML Breakdown:</strong>
+                <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li><code>on:</code> Triggers (push, PR, manual dispatch)</li>
+                    <li><code>jobs:</code> Parallel or sequential execution units</li>
+                    <li><code>needs:</code> Dependency chain (test must pass before deploy)</li>
+                    <li><code>if:</code> Conditional execution (only on main branch)</li>
+                    <li><code>uses:</code> Reusable actions from GitHub Marketplace</li>
+                </ul>
+            </div>
+            <ul class="checklist" data-section="workflow">
+                <li><input type="checkbox" id="wf-1" onchange="updateProgress()"><label for="wf-1">Workflow YAML created in correct path</label></li>
+                <li><input type="checkbox" id="wf-2" onchange="updateProgress()"><label for="wf-2">Understood triggers, jobs, and dependencies</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="test">
+            <h2>🧪 Step 3: Push & Verify Automated Execution</h2>
+            <div class="code-block">
+<code>git add .
+git commit -m "feat: add data pipeline & CI/CD workflow"
+git push origin main</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="step"><span class="step-number">1</span><strong>Monitor Execution</strong></div>
+            <p>Go to GitHub Repo → Click <strong>"Actions"</strong> tab → Click the running workflow → Expand job steps.</p>
+            <div class="expected-output">
+                <strong>✅ Expected Flow:</strong>
+                <ol style="margin-left: 1.2rem; margin-top: 0.5rem;">
+                    <li>Checkout → Setup Python → Install deps</li>
+                    <li>Lint (flake8) → Passes if code style is clean</li>
+                    <li>Tests (pytest) → Runs unit tests</li>
+                    <li>Simulate Deploy → Runs only if tests pass & on main branch</li>
+                </ol>
+            </div>
+            <ul class="checklist" data-section="test">
+                <li><input type="checkbox" id="test-1" onchange="updateProgress()"><label for="test-1">Pushed code & workflow triggered</label></li>
+                <li><input type="checkbox" id="test-2" onchange="updateProgress()"><label for="test-2">All job steps completed successfully</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="secrets">
+            <h2>🔑 Step 4: Secrets & Security Management</h2>
+            <p>Never hardcode credentials. Use GitHub Secrets for sensitive data like API keys or database URIs.</p>
+            <div class="step"><span class="step-number">1</span><strong>Add Repository Secret</strong></div>
+            <p>Repo Settings → Secrets and variables → Actions → New repository secret → Name: <code>MONGODB_URI</code> → Value: <code>mongodb://student:uthm2026@localhost:27017</code></p>
+            <div class="step"><span class="step-number">2</span><strong>Update Workflow to Use Secret</strong></div>
+            <div class="code-block">
+<code># Add this step to the simulate-deploy job:
+      - name: Use Secret
+        run: |
+          echo "🔐 Connecting to database securely..."
+          # Masked in logs automatically
+          echo "Connection string: ${{ secrets.MONGODB_URI }}"
+        env:
+          DB_URI: ${{ secrets.MONGODB_URI }}</code>
+                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+            </div>
+            <div class="alert alert-warning">
+                <span class="alert-icon">⚠️</span>
+                <div><strong>Security Rule:</strong> Secrets are encrypted at rest & masked in logs. Never print secrets in plain text or commit <code>.env</code> files.</div>
+            </div>
+            <ul class="checklist" data-section="secrets">
+                <li><input type="checkbox" id="sec-1" onchange="updateProgress()"><label for="sec-1">Repository secret added</label></li>
+                <li><input type="checkbox" id="sec-2" onchange="updateProgress()"><label for="sec-2">Workflow references secret via <code>${{ secrets.* }}</code></label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="trigger">
+            <h2>⚡ Step 5: Manual Triggers & Workflow Dispatch</h2>
+            <p>Sometimes you need to run pipelines on-demand (e.g., backfill data, retry failed jobs).</p>
+            <div class="code-block">
+<code># The workflow already includes workflow_dispatch:
+# Go to Actions → Select workflow → Click "Run workflow" → Choose branch → Run</code>
+            </div>
+            <p>This adds a manual button to the Actions UI, enabling data engineers to trigger pipelines without code changes.</p>
+            <ul class="checklist" data-section="trigger">
+                <li><input type="checkbox" id="trg-1" onchange="updateProgress()"><label for="trg-1">Manually triggered workflow via UI</label></li>
+                <li><input type="checkbox" id="trg-2" onchange="updateProgress()"><label for="trg-2">Verified dispatch execution logs</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="cloud">
+            <h2>☁️ Step 6: Cloud Computing Bridge</h2>
+            <table>
+                <thead><tr><th>GitHub Actions</th><th>Managed Cloud Equivalent</th><th>Cloud Concept</th></tr></thead>
+                <tbody>
+                    <tr><td><code>.github/workflows/*.yml</code></td><td>AWS CodePipeline / GCP Cloud Build / Azure DevOps Pipelines</td><td>Native CI/CD services</td></tr>
+                    <tr><td>GitHub Runners</td><td>AWS CodeBuild / GCP Cloud Build / Databricks Jobs</td><td>Managed compute agents</td></tr>
+                    <tr><td>Repository Secrets</td><td>AWS Secrets Manager / GCP Secret Manager / Azure Key Vault</td><td>Centralized secret storage</td></tr>
+                    <tr><td>Workflow Dispatch</td><td>EventBridge / Cloud Scheduler / Databricks Task UI</td><td>Event-driven orchestration</td></tr>
+                </tbody>
+            </table>
+            <div class="alert alert-info">
+                <span class="alert-icon">🔑</span>
+                <div><strong>Key Takeaway:</strong> In enterprise data platforms, CI/CD pipelines validate data quality, test transformations, and deploy to production clusters automatically. GitHub Actions is the open-source standard that maps directly to cloud-native orchestration services.</div>
+            </div>
+            <ul class="checklist" data-section="cloud">
+                <li><input type="checkbox" id="cl-1" onchange="updateProgress()"><label for="cl-1">Mapped Actions to cloud CI/CD services</label></li>
+                <li><input type="checkbox" id="cl-2" onchange="updateProgress()"><label for="cl-2">Understood secret managers & event triggers</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="deliverables">
+            <h2>📤 Submission: Lab 8 Deliverables</h2>
+            <div class="deliverable-grid">
+                <div class="deliverable-item"><span class="num">1</span><strong>Workflow YAML</strong><br><small>Copy of <code>.github/workflows/data-pipeline.yml</code></small></div>
+                <div class="deliverable-item"><span class="num">2</span><strong>Run Screenshot</strong><br><small>Actions tab showing all jobs green ✅</small></div>
+                <div class="deliverable-item"><span class="num">3</span><strong>Test Output</strong><br><small>pytest/flake8 logs from workflow run</small></div>
+                <div class="deliverable-item"><span class="num">4</span><strong>Secret Usage Proof</strong><br><small>Workflow step showing masked secret output</small></div>
+                <div class="deliverable-item"><span class="num">5</span><strong>Cloud Reflection</strong><br><small>1-sentence: "Why automate data pipelines instead of running them manually?"</small></div>
+            </div>
+            <div class="alert alert-success">
+                <span class="alert-icon">📁</span>
+                <div><strong>Format:</strong> PDF export from GitHub Actions or shared repo link<br><strong>Name:</strong> <code>LAB8_AD200001</code><br><strong>Grading:</strong> ✅ Complete / ❌ Incomplete (>3 deliverables = full credit)</div>
+            </div>
+            <ul class="checklist" data-section="deliverables">
+                <li><input type="checkbox" id="del-1" onchange="updateProgress()"><label for="del-1">All 5 deliverables prepared</label></li>
+                <li><input type="checkbox" id="del-2" onchange="updateProgress()"><label for="del-2">Named correctly & ready to submit</label></li>
+            </ul>
+        </section>
+
+        <section class="card" id="troubleshoot">
+            <h2>🛠️ Troubleshooting & Tips</h2>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Workflow not triggering"</div>
+                    <div class="accordion-body"><p>Verify file path: <code>.github/workflows/</code> (exact spelling, lowercase). Check YAML indentation. Push to <code>main</code> branch or create PR.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "Secrets not found" error</div>
+                    <div class="accordion-body"><p>Secrets are scoped to the repository. Ensure you added it under <strong>Repo Settings → Secrets</strong>, not Organization. Forked repos don't inherit secrets.</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">❌ "pytest not found"</div>
+                    <div class="accordion-body"><p>Ensure <code>pip install pytest</code> runs before the test step. Check Python version compatibility (3.8+ recommended).</p></div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">💡 How to re-run failed jobs?</div>
+                    <div class="accordion-body"><p>Actions UI → Click failed workflow → "Re-run jobs" → Choose "Re-run failed jobs" or "Re-run all jobs". Saves time vs full pipeline.</p></div>
+                </div>
+            </div>
+            <ul class="checklist" data-section="troubleshoot">
+                <li><input type="checkbox" id="ts-1" onchange="updateProgress()"><label for="ts-1">Reviewed troubleshooting section</label></li>
+            </ul>
+        </section>
+
+        <footer class="footer">
+            <p>📘 <strong>LAB 8: CI/CD Automation for Data Pipelines</strong></p>
+            <p>Big Data Analytics with Cloud Computing | BSc Data Analytics | UTHM</p>
+            <p style="margin-top: 0.5rem;">All tools are 100% free. Patterns scale directly to AWS CodePipeline, GCP Cloud Build, & enterprise GitOps workflows.</p>
+            <p style="margin-top: 0.5rem;">© 2026 Universiti Tun Hussein Onn Malaysia</p>
+        </footer>
+    </main>
+
+    <script>
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = '✅ Copied!'; btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+            });
+        }
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+        function updateProgress() {
+            const all = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            const percent = Math.round((checked.length / all.length) * 100);
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+            const sections = document.querySelectorAll('.checklist');
+            let completed = 0;
+            sections.forEach(s => {
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (cb.length > 0 && cb.length === ck.length) completed++;
+            });
+            document.getElementById('completedSteps').textContent = completed;
+            document.getElementById('totalSteps').textContent = sections.length;
+            sections.forEach(s => {
+                const name = s.getAttribute('data-section');
+                const nav = document.querySelector(`.nav-item[data-section="${name}"]`);
+                const cb = s.querySelectorAll('input[type="checkbox"]');
+                const ck = s.querySelectorAll('input[type="checkbox"]:checked');
+                if (nav) {
+                    nav.classList.remove('completed', 'in-progress');
+                    if (cb.length > 0 && cb.length === ck.length) nav.classList.add('completed');
+                    else if (ck.length > 0) nav.classList.add('in-progress');
+                }
+            });
+            all.forEach(c => localStorage.setItem(c.id, c.checked));
+        }
+        function loadProgress() {
+            document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+                if (localStorage.getItem(c.id) === 'true') { c.checked = true; c.parentElement.classList.add('completed'); }
+            });
+            updateProgress();
+        }
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(c => {
+            c.addEventListener('change', function() { this.parentElement.classList.toggle('completed', this.checked); });
+        });
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        window.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('section[id]').forEach(sec => {
+                if (scrollY >= (sec.offsetTop - 100)) current = sec.getAttribute('id');
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+            });
+        });
+        window.addEventListener('load', loadProgress);
+    </script>
+</body>
+</html>
